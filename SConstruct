@@ -9,7 +9,7 @@ CFLAGS = ["-Wall",
           "-g3",
           "-O3",
           "-pthread",
-          "-Ideps/inih", "-Ideps/libev", "-Isrc"]
+          "-Ideps/inih", "-Ideps/libev", "-Isrc", "-Ibench"]
 CFLAGS_ERROR = copy(CFLAGS)
 CFLAGS_ERROR.extend(["-Werror"])
 CFLAGS_LIBEV = copy(CFLAGS)
@@ -26,7 +26,7 @@ envinih = Environment(CPATH = ['deps/inih/'], CFLAGS= " ".join(CFLAGS))
 inih = envinih.Library('inih', Glob("deps/inih/*.c"))
 
 bench = Environment(CFLAGS = " ".join(CFLAGS))
-bench.Program('bench_statsite', ['bench/bench.c'])
+bench.Program('bench_statsite', ["bench/bench.c", "bench/pcg_basic.c"])
 
 env_statsite_with_err = Environment(CFLAGS = " ".join(CFLAGS_ERROR))
 env_statsite_without_err = Environment(CFLAGS = " ".join(CFLAGS))
