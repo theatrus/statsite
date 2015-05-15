@@ -25,6 +25,9 @@ murmur = envmurmur.Library('murmur', Glob("deps/murmurhash/*.c"))
 envinih = Environment(CPATH = ['deps/inih/'], CFLAGS= " ".join(CFLAGS))
 inih = envinih.Library('inih', Glob("deps/inih/*.c"))
 
+bench = Environment(CFLAGS = " ".join(CFLAGS))
+bench.Program('bench_statsite', ['bench/bench.c'])
+
 env_statsite_with_err = Environment(CFLAGS = " ".join(CFLAGS_ERROR))
 env_statsite_without_err = Environment(CFLAGS = " ".join(CFLAGS))
 env_statsite_libev = Environment(CFLAGS = " ".join(CFLAGS_LIBEV))

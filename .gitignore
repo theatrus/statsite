@@ -16,6 +16,7 @@
 tests/build/
 test_runner
 statsite
+bench_statsite
 .vagrant
 *.pyc
 
