@@ -10,7 +10,7 @@
 
 #include "pcg_basic.h"
 
-/* A small set of random words from /usr/share/dict */
+/* A small set of random words from /usr/share/dict and some bird names. */
 static const char* METRIC_NAMES[] = {
     "abiotic",
     "agone",
@@ -23,7 +23,62 @@ static const char* METRIC_NAMES[] = {
     "farenheit",
     "flashing",
     "galactopyra",
-    "gieway"
+    "gieway",
+    "parados",
+    "aedicule",
+    "chloromethane",
+    "convex",
+    "tussive",
+    "wainrope",
+    "heartbeat",
+    "hydrosulphurous",
+    "interceptive",
+    "blooding",
+    "unarduous",
+    "tricuspidate",
+    "uncivilize",
+    "dishonestly",
+    "diecious",
+    "submissive",
+    "guaran",
+    "illuviating",
+    "penguin",
+    "grouse",
+    "grebe",
+    "flamingo",
+    "heron",
+    "stork",
+    "meeesauce",
+    "divers",
+    "cassowary",
+    "turkey",
+    "partridge",
+    "quail",
+    "cormorant",
+    "vulture",
+    "goshawk",
+    "rail",
+    "crane",
+    "stilt",
+    "avocet",
+    "plover",
+    "snipe",
+    "dove",
+    "pigeon",
+    "auk",
+    "puffin",
+    "skua",
+    "parrot",
+    "macaw",
+    "cuckoo",
+    "owl",
+    "roller",
+    "kingfisher",
+    "hornbill",
+    "woodpecker",
+    "flycatcher",
+    "jay",
+    "robin"
 };
 
 static const int METRIC_NAMES_LEN = sizeof(METRIC_NAMES) / sizeof(METRIC_NAMES[0]);
@@ -46,10 +101,12 @@ static int generate_metric(char* into, pcg32_random_t* r, int max_depth) {
         int word = pcg32_boundedrand_r(r, METRIC_NAMES_LEN);
         int len = strlen(METRIC_NAMES[word]);
         memcpy(into, METRIC_NAMES[word], len);
-        into += len + 1;
+        into += len;
         *into = '.';
+        into += 1;
         length += len + 1;
     }
+    into -= 1;
     *into = '\0'; // Clear the last dot
     return length - 1;
 }
@@ -59,7 +116,12 @@ int main(int argc, char** argv) {
     char send_data[1024];
     struct hostent *host;
     struct sockaddr_in server_addr;
+    pcg32_random_t rand;
 
+    /* Seed the RNG with a known baseline for repeatable tests */
+    pcg32_srandom_r(&rand, 100, 0);
+    
+    
     if (argc < 3) {
         fprintf(stderr, "Usage: %s address port\n", argv[0]);
         exit(1);
