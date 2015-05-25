@@ -9,6 +9,8 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <math.h>
+
+#include "likely.h"
 #include "metrics.h"
 #include "streaming.h"
 #include "conn_handler.h"
@@ -37,10 +39,6 @@
 #define BIN_OUT_RATE     0xb
 #define BIN_OUT_SAMPLE_RATE     0xc
 #define BIN_OUT_PCT     0x80
-
-// Macro to provide branch meta-data
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
 
 // BIN_TYPE_MAP is used to map the BIN_TYPE_* static
 // definitions into the metric_type value, so that

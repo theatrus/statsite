@@ -42,7 +42,8 @@ objs = env_statsite_with_err.Object('src/hashmap', 'src/hashmap.c')           + 
         env_statsite_with_err.Object('src/metrics', 'src/metrics.c')          + \
         env_statsite_with_err.Object('src/streaming', 'src/streaming.c')      + \
         env_statsite_with_err.Object('src/config', 'src/config.c')            + \
-        env_statsite_libev.Object('src/networking', 'src/networking.c') + \
+        env_statsite_with_err.Object('src/circqueue', 'src/circqueue.c')      + \
+        env_statsite_libev.Object('src/networking', 'src/networking.c')       + \
         env_statsite_libev.Object('src/conn_handler', 'src/conn_handler.c')
 
 statsite_libs = ["m", "pthread", murmur, inih]
