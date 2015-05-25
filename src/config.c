@@ -43,6 +43,7 @@ static const statsite_config DEFAULT_CONFIG = {
     0,                  // Do not use binary output by default
     NULL,               // Do not track number of messages received
     NULL,               // No histograms by default
+    NULL,               // No sinks are built
     NULL,
     0.02,               // 2% goal uses precision 12
     12,                 // Set precision 12, 1.6% variance
@@ -247,6 +248,7 @@ static int config_callback(void* user, const char* section, const char* name, co
 
     // Ignore any non-statsite sections
     if (strcasecmp("statsite", section) != 0) {
+        syslog(LOG_NOTICE, "Unknown values in section ignored: %s", section);
         return 0;
     }
 

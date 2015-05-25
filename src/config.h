@@ -15,7 +15,44 @@ typedef enum {
     GAUGE_DELTA
 } metric_type;
 
+typedef enum {
+    SINK_STREAM_TEXT,
+    SINK_STREAM_BIN
+} sink_type;
+
 #define METRIC_TYPES 7
+
+/**
+ * A string-string KV list for loading parameters
+ * from a config file before transformation/validation.
+ * Useful if information will be ordered differently
+ * and certain fields are required before others.
+ */
+typedef struct kv_config {
+    const char* section;
+    const char* k;
+    const char* v;
+    struct kv_config* next;
+} kv_config;
+
+///// SINK CONFIGURATION
+
+/**
+ * The sink configuration base type
+ */
+typedef struct sink_config {
+    sink_type type;
+    struct sink_config *next;
+} sink_config;
+
+/**
+ * A stream command sink
+ */
+typedef struct sink_config_stream {
+    sink_config super;
+    bool binary_stream;
+    const char* stream_cmd;
+} sink_stream_config;
 
 // Represents the configuration of a histogram
 typedef struct histogram_config {
@@ -49,6 +86,7 @@ typedef struct {
     bool binary_stream;
     char *input_counter;
     histogram_config *hist_configs;
+    sink_config *sink_configs;
     radix_tree *histograms;
     double set_eps;
     unsigned char set_precision;
