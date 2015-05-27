@@ -4,11 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#include "metrics.h"
 
 typedef struct sink {
-    statsite_config* global_config;
-    sink_config* sink_config;
+    const statsite_config* global_config;
+    const sink_config* sink_config;
     struct sink* next;
+    int (*command)(struct sink*, metrics* m, void* data);
 } sink;
 
 extern sink* init_stream_sink(const sink_config_stream*, const statsite_config*);
