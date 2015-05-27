@@ -195,7 +195,7 @@ static void sink_commit(statsite_config *config) {
     if (sink_in_progress) {
         sink_config* last = config->sink_configs;
         if (last)
-            last->next = sink_in_progress;
+            sink_in_progress->next = last;
         config->sink_configs = sink_in_progress;
     }
 
