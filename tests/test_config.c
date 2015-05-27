@@ -568,3 +568,54 @@ sets_prefix=foo.sets.bar.";
     unlink("/tmp/global_prefix");
 }
 END_TEST
+
+START_TEST(test_basic_sink)
+{
+    int fh = open("/tmp/ss_sink_basic", O_CREAT|O_RDWR, 0777);
+    char *buf = "[statsite]\n\
+port = 10000\n\
+udp_port = 10001\n\
+flush_interval = 120\n\
+timer_eps = 0.005\n\
+stream_cmd = foo\n\
+log_level = INFO\n\
+log_facility = local0\n\
+daemonize = true\n\
+binary_stream = true\n\
+input_counter = foobar\n\
+pid_file = /tmp/statsite.pid\n\
+\n\
+[sink_stream_main]\n\
+binary=true\n\
+command=cat\n\
+";
+    write(fh, buf, strlen(buf));
+    fchmod(fh, 777);
+    close(fh);
+
+    statsite_config config;
+    int res = config_from_filename("/tmp/ss_sink_basic", &config);
+    fail_unless(res == 0);
+
+    // Should get the config
+    fail_unless(config.tcp_port == 10000);
+    fail_unless(config.udp_port == 10001);
+    fail_unless(strcmp(config.log_level, "INFO") == 0);
+    fail_unless(config.timer_eps == (double)0.005);
+    fail_unless(strcmp(config.stream_cmd, "foo") == 0);
+    fail_unless(config.flush_interval == 120);
+    fail_unless(config.daemonize == true);
+    fail_unless(config.binary_stream == true);
+    fail_unless(strcmp(config.pid_file, "/tmp/statsite.pid") == 0);
+    fail_unless(strcmp(config.input_counter, "foobar") == 0);
+
+    sink_config *c = config.sink_configs;
+    fail_unless(c != NULL);
+    fail_unless(c->type == SINK_TYPE_STREAM);
+
+    sink_config_stream *cs = (sink_config_stream*)c;
+    fail_unless(cs->binary_stream == true);
+
+    unlink("/tmp/ss_sink_basic");
+}
+END_TEST
