@@ -13,6 +13,7 @@
 #include "binary_types.h"
 #include "likely.h"
 #include "metrics.h"
+#include "sink.h"
 #include "streaming.h"
 #include "conn_handler.h"
 
@@ -50,35 +51,45 @@ void init_conn_handler(statsite_config *config) {
 }
 
 /**
+ * A struct passed to the flush thread which contains an instance of
+ * metrics and any currently configured sinks.
+ */
+struct flush_op {
+    metrics* m;
+    sink* sinks;
+};
+
+/**
  * This is the thread that is invoked to handle flushing metrics
  */
 static void* flush_thread(void *arg) {
     // Cast the args
-    metrics *m = arg;
+    struct flush_op* ops = arg;
+    metrics *m = ops->m;
+    sink* sinks = ops->sinks;
 
     // Get the current time
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
-    // Determine which callback to use
-    stream_callback cb = (GLOBAL_CONFIG->binary_stream)? stream_formatter_bin: stream_formatter;
-
-    // Stream the records
-    int res = stream_to_command(m, &tv, cb, GLOBAL_CONFIG->stream_cmd);
-    if (res != 0) {
-        syslog(LOG_WARNING, "Streaming command exited with status %d", res);
+    for (sink* s = sinks; s != NULL; s = s->next) {
+        int res = s->command(s, m, &tv);
+        if (res != 0) {
+            syslog(LOG_WARNING, "Streaming command exited with status %d", res);
+        }
     }
-
+    
     // Cleanup
     destroy_metrics(m);
     free(m);
+    free(ops);
     return NULL;
 }
 
 /**
  * Invoked to when we've reached the flush interval timeout
  */
-void flush_interval_trigger() {
+void flush_interval_trigger(sink* sinks) {
     // Make a new metrics object
     metrics *m = malloc(sizeof(metrics));
     init_metrics(GLOBAL_CONFIG->timer_eps, GLOBAL_CONFIG->quantiles,
@@ -86,7 +97,10 @@ void flush_interval_trigger() {
             GLOBAL_CONFIG->set_precision, m);
 
     // Swap with the new one
-    metrics *old = GLOBAL_METRICS;
+    struct flush_op* ops = calloc(1, sizeof(struct flush_op));
+    ops->m = GLOBAL_METRICS;
+    ops->sinks = sinks;
+
     GLOBAL_METRICS = m;
 
     // Start a flush thread
@@ -95,7 +109,7 @@ void flush_interval_trigger() {
     sigset_t newset;
     sigfillset(&newset);
     pthread_sigmask(SIG_BLOCK, &newset, &oldset);
-    int err = pthread_create(&thread, NULL, flush_thread, old);
+    int err = pthread_create(&thread, NULL, flush_thread, ops);
     pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 
     if (err == 0) {
@@ -104,7 +118,7 @@ void flush_interval_trigger() {
     }
 
     syslog(LOG_WARNING, "Failed to spawn flush thread: %s", strerror(err));
-    GLOBAL_METRICS = old;
+    GLOBAL_METRICS = ops->m;
     destroy_metrics(m);
     free(m);
 }

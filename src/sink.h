@@ -13,6 +13,7 @@ typedef struct sink {
     int (*command)(struct sink*, metrics* m, void* data);
 } sink;
 
+extern int init_sinks(sink** sinks, statsite_config* config);
 extern sink* init_stream_sink(const sink_config_stream*, const statsite_config*);
 
 #endif

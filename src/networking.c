@@ -298,6 +298,9 @@ int init_networking(statsite_config *config, statsite_networking **netconf_out) 
         return 1;
     }
 
+    // Setup sinks
+    init_sinks(&netconf->sinks, config);
+
     // Setup the timer
     ev_timer_init(&netconf->flush_timer, handle_flush_event, config->flush_interval, config->flush_interval);
     ev_timer_start(&netconf->flush_timer);
@@ -316,8 +319,9 @@ int init_networking(statsite_config *config, statsite_networking **netconf_out) 
  * We need to instruct the connection handler about this.
  */
 static void handle_flush_event(ev_timer *watcher, int revents) {
+    worker_ev_userdata *data = ev_userdata();
     // Inform the connection handler of the timeout
-    flush_interval_trigger();
+    flush_interval_trigger(data->netconf->sinks);
 }
 
 
