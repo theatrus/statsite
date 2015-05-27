@@ -69,6 +69,15 @@ static const statsite_config DEFAULT_CONFIG = {
     default_quantiles,  // Quantiles
 };
 
+static const sink_config_stream DEFAULT_SINK = {
+    .super = { .type = SINK_TYPE_STREAM,
+               .name = "default",
+               .next = NULL
+    },
+    .binary_stream = false,
+    .stream_cmd = "cat"
+};
+
 /**
  * Attempts to convert a string to a boolean,
  * and write the value out.
@@ -487,6 +496,11 @@ int config_from_filename(char *filename, statsite_config *config) {
 
     if (sink_in_progress)
         sink_commit(config);
+
+    /* Fill in a default sink if there is none specified */
+    if (config->sink_configs == NULL) {
+        config->sink_configs = (sink_config*)&DEFAULT_SINK;
+    }
 
     return 0;
 }

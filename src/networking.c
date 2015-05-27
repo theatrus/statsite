@@ -13,6 +13,7 @@
 #include "circqueue.h"
 #include "networking.h"
 #include "conn_handler.h"
+#include "sink.h"
 
 // Length of string to represent maximum port of 65535
 #define MAX_PORT_LEN 6
@@ -65,6 +66,7 @@ struct statsite_networking {
     ev_io udp_client;
     conn_info *stdin_client;
     ev_timer flush_timer;
+    sink* sinks;
 };
 
 
@@ -328,7 +330,7 @@ static void handle_new_client(ev_io *watcher, int ready_events) {
     // Accept the client connection
     int listen_fd = watcher->fd;
     struct sockaddr_in client_addr;
-    int client_addr_len = sizeof(client_addr);
+    socklen_t client_addr_len = sizeof(client_addr);
     int client_fd = accept(listen_fd,
                         (struct sockaddr*)&client_addr,
                         &client_addr_len);
