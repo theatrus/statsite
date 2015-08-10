@@ -38,6 +38,9 @@ murmur = envmurmur.Library('murmur', Glob("deps/murmurhash/*.c"))
 envinih = ENV.Clone(CPATH = ['deps/inih/'], CFLAGS= " ".join(CFLAGS))
 inih = envinih.Library('inih', Glob("deps/inih/*.c"))
 
+envlua = ENV.Clone(CPATH = ['deps/lua53'], CFLAGS = " ".join(CFLAGS))
+lua = envlua.Library('lua53', Glob("deps/lua53/*.c"))
+
 env_statsite_with_err = ENV.Clone(CFLAGS = " ".join(CFLAGS_ERROR))
 env_statsite_without_err = ENV.Clone(CFLAGS = " ".join(CFLAGS))
 env_statsite_libev = ENV.Clone(CFLAGS = " ".join(CFLAGS_LIBEV))
@@ -63,7 +66,7 @@ objs = env_statsite_with_err.Object('src/hashmap', 'src/hashmap.c')           + 
         env_statsite_libev.Object('src/networking', 'src/networking.c')       + \
         env_statsite_libev.Object('src/conn_handler', 'src/conn_handler.c')
 
-statsite_libs = ["m", "pthread", murmur, inih, "jansson", curl_lib]
+statsite_libs = ["m", "pthread", murmur, inih, "jansson", curl_lib, lua, "m"]
 if platform.system() == 'Linux':
    statsite_libs.append("rt")
 
