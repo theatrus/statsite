@@ -1,4 +1,4 @@
-Statsite (Twitter-Forks) [![Build Status](https://travis-ci.org/twitter-forks/statsite.png)](https://travis-ci.org/twitter-forks/statsite)
+Statsite (Lyft) [![Build Status](https://travis-ci.org/lyft/statsite.png)](https://travis-ci.org/lyft/statsite)
 ========
 
 Statsite is a metrics aggregation server. Statsite is based heavily
@@ -50,7 +50,7 @@ invoking a specified application. Statsite then streams the
 aggregated metrics over stdin to the application, which is
 free to handle the metrics as it sees fit.
 
-_New_ Statsite (Twitter-Forks) supports multiple sinks, of different
+_New_ Statsite (Lyft) supports multiple sinks, of different
 types, as long as they all honor the same flush period. A built-in
 HTTP sink has also been provided, which provides LIFO space-limited
 queueing semantics which significantly improve backlogs during TSDB
