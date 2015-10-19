@@ -65,13 +65,13 @@ struct statsite_networking {
     ev_io tcp_client;
     ev_io udp_client;
     conn_info *stdin_client;
-    ev_timer flush_timer;
+    ev_periodic flush_timer;
     sink* sinks;
 };
 
 
 // Static typedefs
-static void handle_flush_event(EV_P_ ev_timer *watcher, int revents);
+static void handle_flush_event(EV_P_ ev_periodic *watcher, int revents);
 static void handle_new_client(EV_P_ ev_io *watcher, int ready_events);
 static void handle_udp_message(EV_P_ ev_io *watch, int ready_events);
 static void invoke_event_handler(EV_P_ ev_io *watch, int ready_events);
@@ -306,8 +306,8 @@ int init_networking(statsite_config *config, statsite_networking **netconf_out, 
     netconf->sinks = sinks;
 
     // Setup the timer
-    ev_timer_init(&netconf->flush_timer, handle_flush_event, config->flush_interval, config->flush_interval);
-    ev_timer_start(netconf->loop, &netconf->flush_timer);
+    ev_periodic_init(&netconf->flush_timer, handle_flush_event, 0, config->flush_interval, NULL);
+    ev_periodic_start(netconf->loop, &netconf->flush_timer);
 
     // Prepare the conn handlers
     init_conn_handler(config);
@@ -322,7 +322,7 @@ int init_networking(statsite_config *config, statsite_networking **netconf_out, 
  * Invoked when our flush timer is reached.
  * We need to instruct the connection handler about this.
  */
-static void handle_flush_event(EV_P_ ev_timer *watcher, int revents) {
+static void handle_flush_event(EV_P_ ev_periodic *watcher, int revents) {
     worker_ev_userdata *data = ev_userdata(EV_A);
     // Inform the connection handler of the timeout
     flush_interval_trigger(data->netconf->sinks);
@@ -546,7 +546,7 @@ int shutdown_networking(statsite_networking *netconf) {
     }
 
     // Stop the other timers
-    ev_timer_stop(netconf->loop, &netconf->flush_timer);
+    ev_periodic_stop(netconf->loop, &netconf->flush_timer);
 
     // TODO: Close all the client connections
     // ??? For now, we just leak the memory
