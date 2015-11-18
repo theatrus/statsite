@@ -83,10 +83,10 @@ static int add_metrics(void* data,
             const int suffix_space = 8;
             char suffixed[base_len + suffix_space];
             strcpy(suffixed, full_name);
-            SUFFIX_ADD(".incr", json_integer(counter_count(value)));
+            SUFFIX_ADD(".count", json_integer(counter_count(value)));
             SUFFIX_ADD(".mean", json_real(counter_mean(value)));
             SUFFIX_ADD(".stdev", json_real(counter_stddev(value))); /* stdev matches other output */
-            SUFFIX_ADD(".count", json_real(counter_sum(value)));
+            SUFFIX_ADD(".sum", json_real(counter_sum(value)));
             SUFFIX_ADD(".sum_sq", json_real(counter_squared_sum(value)));
             SUFFIX_ADD(".lower", json_real(counter_min(value)));
             SUFFIX_ADD(".upper", json_real(counter_max(value)));

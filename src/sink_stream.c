@@ -144,10 +144,10 @@ static int stream_formatter(FILE *pipe, void *data, metric_type type, char *name
 
         case COUNTER:
             if (ct->global_config->extended_counters) {
-                STREAM("%s%s.incr|%" PRIu64 "|%lld\n", prefix, name, counter_count(value));
+                STREAM("%s%s.count|%" PRIu64 "|%lld\n", prefix, name, counter_count(value));
                 STREAM("%s%s.mean|%f|%lld\n", prefix, name, counter_mean(value));
                 STREAM("%s%s.stdev|%f|%lld\n", prefix, name, counter_stddev(value));
-                STREAM("%s%s.count|%f|%lld\n", prefix, name, counter_sum(value));
+                STREAM("%s%s.sum|%f|%lld\n", prefix, name, counter_sum(value));
                 STREAM("%s%s.sum_sq|%f|%lld\n", prefix, name, counter_squared_sum(value));
                 STREAM("%s%s.lower|%f|%lld\n", prefix, name, counter_min(value));
                 STREAM("%s%s.upper|%f|%lld\n", prefix, name, counter_max(value));
