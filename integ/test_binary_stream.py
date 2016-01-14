@@ -255,8 +255,15 @@ class TestInteg(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in (format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500),
-                       format_output(now - 1, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500))
+
+        # Adjust for time drift
+        if format_output(now - 1, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500) in out:
+            now = now - 1
+
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500) in out
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["sum"], 500) in out
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["mean"], 500) in out
+
 
     def test_counters(self, servers):
         "Tests adding kv pairs"
@@ -369,8 +376,16 @@ class TestIntegPrefix(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in (format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500),
-                       format_output(now - 1, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500))
+
+
+        # Adjust for time drift
+        if format_output(now - 1, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500) in out:
+            now = now - 1
+
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500) in out
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["sum"], 500) in out
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["mean"], 500) in out
+
 
     def test_counters(self, serversPrefix):
         "Tests adding kv pairs"

@@ -21,10 +21,6 @@ int init_gauge(gauge_t *gauge) {
  * @return 0 on success.
  */
 int gauge_add_sample(gauge_t *gauge, double sample, bool delta) {
-    if (gauge->count == 0) {
-        gauge->sum = sample;
-    }
-
     if (delta) {
         gauge->value += sample;
         gauge->sum += sample;
