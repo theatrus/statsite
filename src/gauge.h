@@ -1,6 +1,7 @@
 #ifndef GAUGE_H
 #define GAUGE_H
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     uint64_t count;     // Count of items
