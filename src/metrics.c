@@ -194,9 +194,7 @@ static int metrics_set_gauge(metrics *m, char *name, double val, bool delta) {
     // New gauge
     if (res == -1) {
         g = malloc(sizeof(gauge_t));
-        g->value = 0;
-        g->sum = 0;
-        g->count = 0;
+        init_gauge(g);
         hashmap_put(m->gauges, name, g);
     }
 

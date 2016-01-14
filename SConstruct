@@ -52,6 +52,7 @@ objs = env_statsite_with_err.Object('src/hashmap', 'src/hashmap.c')           + 
         env_statsite_with_err.Object('src/cm_quantile', 'src/cm_quantile.c')  + \
         env_statsite_with_err.Object('src/timer', 'src/timer.c')              + \
         env_statsite_with_err.Object('src/counter', 'src/counter.c')          + \
+        env_statsite_with_err.Object('src/gauge', 'src/gauge.c')          + \
         env_statsite_with_err.Object('src/metrics', 'src/metrics.c')          + \
         env_statsite_with_err.Object('src/streaming', 'src/streaming.c')      + \
         env_statsite_with_err.Object('src/config', 'src/config.c')            + \
