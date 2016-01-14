@@ -20,9 +20,10 @@ int init_gauge(gauge_t *gauge);
  * Adds a new sample to the struct
  * @arg gauge The gauge to add to
  * @arg sample The new sample value
+ * @arg delta   Is this a delta update?
  * @return 0 on success.
  */
-int gauge_add_sample(gauge_t *gauge, double sample);
+int gauge_add_sample(gauge_t *gauge, double sample, bool delta);
 
 /**
  * Returns the number of samples in the gauge

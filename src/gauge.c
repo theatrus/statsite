@@ -9,6 +9,7 @@
 int init_gauge(gauge_t *gauge) {
     counter->count = 0;
     counter->sum = 0;
+    counter->value = 0;
     return 0;
 }
 
@@ -16,16 +17,22 @@ int init_gauge(gauge_t *gauge) {
  * Adds a new sample to the struct
  * @arg gauge The gauge to add to
  * @arg sample The new sample value
+ * @arg delta   Is this a delta update?
  * @return 0 on success.
  */
-int gauge_add_sample(gauge_t *gauge, double sample) {
+int gauge_add_sample(gauge_t *gauge, double sample, bool delta) {
     if (gauge->count == 0) {
         gauge->sum = sample;
     }
 
-    gauge->value = sample;
+    if (delta) {
+        gauge->value += sample;
+        gauge->sum += sample;
+    } else {
+        gauge->value = sample;
+        gauge->sum = sample;
+    }
     gauge->count++;
-    gauge->sum += sample;
     return 0;
 }
 

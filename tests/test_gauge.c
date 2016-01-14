@@ -20,7 +20,7 @@ END_TEST
 START_TEST(test_gauge_init_add)
 {
     gauge_t g;
-    int res = inti_gauge(&g);
+    int res = init_gauge(&g);
     fail_unless(res == 0);
 
     fail_unless(gauge_add_sample(&g, 100) == 0);
