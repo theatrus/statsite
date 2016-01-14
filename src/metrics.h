@@ -5,6 +5,7 @@
 #include "radix.h"
 #include "counter.h"
 #include "timer.h"
+#include "gauge.h"
 #include "hashmap.h"
 #include "set.h"
 
@@ -21,10 +22,6 @@ typedef struct {
     histogram_config *conf;
     unsigned int *counts;
 } timer_hist;
-
-typedef struct {
-    double value;
-} gauge_t;
 
 typedef struct {
     hashmap *counters;  // Hashmap of name -> counter structs
