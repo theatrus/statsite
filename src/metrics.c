@@ -200,7 +200,7 @@ static int metrics_set_gauge(metrics *m, char *name, double val, bool delta) {
         hashmap_put(m->gauges, name, g);
     }
 
-    return gauge_add_sample(c, val, delta);
+    return gauge_add_sample(g, val, delta);
 }
 
 /**

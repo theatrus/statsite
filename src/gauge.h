@@ -30,7 +30,7 @@ int gauge_add_sample(gauge_t *gauge, double sample, bool delta);
  * @arg gauge The gauge to query
  * @return The number of samples
  */
-uint64_t gauge_count(gauge_t *counter);
+uint64_t gauge_count(gauge_t *gauge);
 
 /**
  * Returns the mean gauge value

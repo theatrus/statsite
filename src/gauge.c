@@ -7,9 +7,9 @@
  * @return 0 on success.
  */
 int init_gauge(gauge_t *gauge) {
-    counter->count = 0;
-    counter->sum = 0;
-    counter->value = 0;
+    gauge->count = 0;
+    gauge->sum = 0;
+    gauge->value = 0;
     return 0;
 }
 
