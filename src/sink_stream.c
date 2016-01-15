@@ -69,6 +69,8 @@ static int stream_formatter_bin(FILE *pipe, void *data, metric_type type, char *
 
         case GAUGE:
             STREAM_BIN(BIN_TYPE_GAUGE, BIN_OUT_NO_TYPE, ((gauge_t*)value)->value);
+            STREAM_BIN(BIN_TYPE_GAUGE, BIN_OUT_SUM, gauge_sum(value));
+            STREAM_BIN(BIN_TYPE_GAUGE, BIN_OUT_MEAN, gauge_mean(value));
             break;
 
         case COUNTER:

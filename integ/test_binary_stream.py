@@ -252,11 +252,21 @@ class TestInteg(object):
         "Tests streaming gauges"
         server, _, output = servers
         server.sendall(format("g1", "g", 500))
+        server.sendall(format("g1", "g", 200))
+        server.sendall(format("g1", "g", 200))
+
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in (format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500),
-                       format_output(now - 1, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500))
+
+        # Adjust for time drift
+        if format_output(now - 1, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 200) in out:
+            now = now - 1
+
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 200) in out
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["sum"], 900) in out
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["mean"], 300) in out
+
 
     def test_counters(self, servers):
         "Tests adding kv pairs"
@@ -366,11 +376,21 @@ class TestIntegPrefix(object):
         "Tests streaming gauges"
         server, _, output = serversPrefix
         server.sendall(format("g1", "g", 500))
+        server.sendall(format("g1", "g", 100))
+        server.sendall(format("g1", "g", 300))
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in (format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500),
-                       format_output(now - 1, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 500))
+
+
+        # Adjust for time drift
+        if format_output(now - 1, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 300) in out:
+            now = now - 1
+
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 300) in out
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["sum"], 900) in out
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["mean"], 300) in out
+
 
     def test_counters(self, serversPrefix):
         "Tests adding kv pairs"

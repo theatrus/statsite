@@ -6,6 +6,7 @@
 #include "test_heap.c"
 #include "test_timer.c"
 #include "test_counter.c"
+#include "test_gauge.c"
 #include "test_metrics.c"
 #include "test_streaming.c"
 #include "test_config.c"
@@ -25,14 +26,15 @@ int main(void)
     TCase *tc3 = tcase_create("heap");
     TCase *tc4 = tcase_create("timer");
     TCase *tc5 = tcase_create("counter");
-    TCase *tc6 = tcase_create("metrics");
-    TCase *tc7 = tcase_create("streaming");
-    TCase *tc8 = tcase_create("config");
-    TCase *tc9 = tcase_create("radix");
-    TCase *tc10 = tcase_create("hyperloglog");
-    TCase *tc11 = tcase_create("set");
-    TCase *tc12 = tcase_create("lifoq");
-    TCase *tc13 = tcase_create("strbuf");
+    TCase *tc6 = tcase_create("gauge");
+    TCase *tc7 = tcase_create("metrics");
+    TCase *tc8 = tcase_create("streaming");
+    TCase *tc9 = tcase_create("config");
+    TCase *tc10 = tcase_create("radix");
+    TCase *tc11 = tcase_create("hyperloglog");
+    TCase *tc12 = tcase_create("set");
+    TCase *tc13 = tcase_create("lifoq");
+    TCase *tc14 = tcase_create("strbuf");
     SRunner *sr = srunner_create(s1);
     int nf;
 
@@ -87,85 +89,91 @@ int main(void)
     tcase_add_test(tc5, test_counter_init_add);
     tcase_add_test(tc5, test_counter_add_loop);
 
-    // Add the counter tests
+    // Add the gauge tests
     suite_add_tcase(s1, tc6);
-    tcase_add_test(tc6, test_metrics_init_and_destroy);
-    tcase_add_test(tc6, test_metrics_init_defaults_and_destroy);
-    tcase_add_test(tc6, test_metrics_empty_iter);
-    tcase_add_test(tc6, test_metrics_add_iter);
-    tcase_add_test(tc6, test_metrics_add_all_iter);
-    tcase_add_test(tc6, test_metrics_histogram);
-    tcase_add_test(tc6, test_metrics_gauges);
+    tcase_add_test(tc6, test_counter_init);
+    tcase_add_test(tc6, test_counter_init_add);
+    tcase_add_test(tc6, test_counter_add_loop);
+
+    // Add the counter tests
+    suite_add_tcase(s1, tc7);
+    tcase_add_test(tc7, test_metrics_init_and_destroy);
+    tcase_add_test(tc7, test_metrics_init_defaults_and_destroy);
+    tcase_add_test(tc7, test_metrics_empty_iter);
+    tcase_add_test(tc7, test_metrics_add_iter);
+    tcase_add_test(tc7, test_metrics_add_all_iter);
+    tcase_add_test(tc7, test_metrics_histogram);
+    tcase_add_test(tc7, test_metrics_gauges);
 
     // Add the streaming tests
-    suite_add_tcase(s1, tc7);
-    tcase_add_test(tc7, test_stream_empty);
-    tcase_add_test(tc7, test_stream_some);
-    tcase_add_test(tc7, test_stream_bad_cmd);
-    tcase_add_test(tc7, test_stream_sigpipe);
+    suite_add_tcase(s1, tc8);
+    tcase_add_test(tc8, test_stream_empty);
+    tcase_add_test(tc8, test_stream_some);
+    tcase_add_test(tc8, test_stream_bad_cmd);
+    tcase_add_test(tc8, test_stream_sigpipe);
 
     // Add the config tests
-    suite_add_tcase(s1, tc8);
-    tcase_add_test(tc8, test_config_get_default);
-    tcase_add_test(tc8, test_config_bad_file);
-    tcase_add_test(tc8, test_config_empty_file);
-    tcase_add_test(tc8, test_config_basic_config);
-    tcase_add_test(tc8, test_validate_default_config);
-    tcase_add_test(tc8, test_validate_bad_config);
-    tcase_add_test(tc8, test_join_path_no_slash);
-    tcase_add_test(tc8, test_join_path_with_slash);
-    tcase_add_test(tc8, test_sane_log_level);
-    tcase_add_test(tc8, test_sane_log_facility);
-    tcase_add_test(tc8, test_sane_timer_eps);
-    tcase_add_test(tc8, test_sane_flush_interval);
-    tcase_add_test(tc8, test_sane_histograms);
-    tcase_add_test(tc8, test_sane_set_eps);
-    tcase_add_test(tc8, test_config_histograms);
-    tcase_add_test(tc8, test_build_radix);
-    tcase_add_test(tc8, test_sane_prefixes);
-    tcase_add_test(tc8, test_sane_global_prefix);
-    tcase_add_test(tc8, test_sane_quantiles);
-    tcase_add_test(tc8, test_basic_sink);
-    tcase_add_test(tc8, test_multi_sink);
+    suite_add_tcase(s1, tc9);
+    tcase_add_test(tc9, test_config_get_default);
+    tcase_add_test(tc9, test_config_bad_file);
+    tcase_add_test(tc9, test_config_empty_file);
+    tcase_add_test(tc9, test_config_basic_config);
+    tcase_add_test(tc9, test_validate_default_config);
+    tcase_add_test(tc9, test_validate_bad_config);
+    tcase_add_test(tc9, test_join_path_no_slash);
+    tcase_add_test(tc9, test_join_path_with_slash);
+    tcase_add_test(tc9, test_sane_log_level);
+    tcase_add_test(tc9, test_sane_log_facility);
+    tcase_add_test(tc9, test_sane_timer_eps);
+    tcase_add_test(tc9, test_sane_flush_interval);
+    tcase_add_test(tc9, test_sane_histograms);
+    tcase_add_test(tc9, test_sane_set_eps);
+    tcase_add_test(tc9, test_config_histograms);
+    tcase_add_test(tc9, test_build_radix);
+    tcase_add_test(tc9, test_sane_prefixes);
+    tcase_add_test(tc9, test_sane_global_prefix);
+    tcase_add_test(tc9, test_sane_quantiles);
+    tcase_add_test(tc9, test_basic_sink);
+    tcase_add_test(tc9, test_multi_sink);
 
     // Add the radix tests
-    suite_add_tcase(s1, tc9);
-    tcase_add_test(tc9, test_radix_init_and_destroy);
-    tcase_add_test(tc9, test_radix_insert);
-    tcase_add_test(tc9, test_radix_search);
-    tcase_add_test(tc9, test_radix_longest_prefix);
-    tcase_add_test(tc9, test_radix_foreach);
+    suite_add_tcase(s1, tc10);
+    tcase_add_test(tc10, test_radix_init_and_destroy);
+    tcase_add_test(tc10, test_radix_insert);
+    tcase_add_test(tc10, test_radix_search);
+    tcase_add_test(tc10, test_radix_longest_prefix);
+    tcase_add_test(tc10, test_radix_foreach);
 
     // Add the hll tests
-    suite_add_tcase(s1, tc10);
-    tcase_add_test(tc10, test_hll_init_bad);
-    tcase_add_test(tc10, test_hll_init_and_destroy);
-    tcase_add_test(tc10, test_hll_add);
-    tcase_add_test(tc10, test_hll_add_hash);
-    tcase_add_test(tc10, test_hll_add_size);
-    tcase_add_test(tc10, test_hll_size);
-    tcase_add_test(tc10, test_hll_error_bound);
-    tcase_add_test(tc10, test_hll_precision_for_error);
+    suite_add_tcase(s1, tc11);
+    tcase_add_test(tc11, test_hll_init_bad);
+    tcase_add_test(tc11, test_hll_init_and_destroy);
+    tcase_add_test(tc11, test_hll_add);
+    tcase_add_test(tc11, test_hll_add_hash);
+    tcase_add_test(tc11, test_hll_add_size);
+    tcase_add_test(tc11, test_hll_size);
+    tcase_add_test(tc11, test_hll_error_bound);
+    tcase_add_test(tc11, test_hll_precision_for_error);
 
     // Add the set tests
-    suite_add_tcase(s1, tc11);
-    tcase_add_test(tc11, test_set_init_destroy);
-    tcase_add_test(tc11, test_set_add_size_exact);
-    tcase_add_test(tc11, test_set_add_size_exact_dedup);
-    tcase_add_test(tc11, test_set_error_bound);
+    suite_add_tcase(s1, tc12);
+    tcase_add_test(tc12, test_set_init_destroy);
+    tcase_add_test(tc12, test_set_add_size_exact);
+    tcase_add_test(tc12, test_set_add_size_exact_dedup);
+    tcase_add_test(tc12, test_set_error_bound);
 
     // Add the lifoq tests
-    suite_add_tcase(s1, tc12);
-    tcase_add_test(tc12, test_lifoq_make);
-    tcase_add_test(tc12, test_lifoq_basic);
-    tcase_add_test(tc12, test_lifoq_overflow);
-    tcase_add_test(tc12, test_lifoq_close);
+    suite_add_tcase(s1, tc13);
+    tcase_add_test(tc13, test_lifoq_make);
+    tcase_add_test(tc13, test_lifoq_basic);
+    tcase_add_test(tc13, test_lifoq_overflow);
+    tcase_add_test(tc13, test_lifoq_close);
 
     // Add the strbuf tests
-    suite_add_tcase(s1, tc13);
-    tcase_add_test(tc13, test_strbuf_new);
-    tcase_add_test(tc13, test_strbuf_printf);
-    tcase_add_test(tc13, test_strbuf_big);
+    suite_add_tcase(s1, tc14);
+    tcase_add_test(tc14, test_strbuf_new);
+    tcase_add_test(tc14, test_strbuf_printf);
+    tcase_add_test(tc14, test_strbuf_big);
 
 
     srunner_run_all(sr, CK_ENV);
