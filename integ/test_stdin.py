@@ -96,7 +96,10 @@ class TestInteg(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in ("gauges.g1|50.000000|%d\n" % now, "gauges.g1|50.000000|%d\n" % (now - 1))
+
+        assert "gauges.g1|50.000000|%d\n" % now in out
+        assert "gauges.g1.sum|51.000000|%d\n" % now in out
+        assert "gauges.g1.mean|25.500000|%d\n" % now in out
 
     def test_gauges_delta(self, servers):
         "Tests adding gauges"
@@ -106,7 +109,10 @@ class TestInteg(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in ("gauges.gd|100.000000|%d\n" % now, "gauges.gd|100.000000|%d\n" % (now - 1))
+        assert "gauges.g1|100.000000|%d\n" % now in out
+        assert "gauges.g1.sum|100.000000|%d\n" % now in out
+        assert "gauges.g1.mean|50.000000|%d\n" % now in out
+
 
     def test_gauges_delta_neg(self, servers):
         "Tests adding gauges"
@@ -116,7 +122,9 @@ class TestInteg(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert out in ("gauges.gd|-100.000000|%d\n" % now, "gauges.gd|-100.000000|%d\n" % (now - 1))
+        assert "gauges.g1|-100.000000|%d\n" % now in out
+        assert "gauges.g1.sum|-100.000000|%d\n" % now in out
+        assert "gauges.g1.mean|-50.000000|%d\n" % now in out
 
     def test_counters(self, servers):
         "Tests adding kv pairs"
