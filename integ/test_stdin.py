@@ -109,9 +109,9 @@ class TestInteg(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert "gauges.g1|100.000000|%d\n" % now in out
-        assert "gauges.g1.sum|100.000000|%d\n" % now in out
-        assert "gauges.g1.mean|50.000000|%d\n" % now in out
+        assert "gauges.gd|100.000000|%d\n" % now in out
+        assert "gauges.gd.sum|100.000000|%d\n" % now in out
+        assert "gauges.gd.mean|50.000000|%d\n" % now in out
 
 
     def test_gauges_delta_neg(self, servers):
@@ -122,9 +122,9 @@ class TestInteg(object):
         wait_file(output)
         now = time.time()
         out = open(output).read()
-        assert "gauges.g1|-100.000000|%d\n" % now in out
-        assert "gauges.g1.sum|-100.000000|%d\n" % now in out
-        assert "gauges.g1.mean|-50.000000|%d\n" % now in out
+        assert "gauges.gd|-100.000000|%d\n" % now in out
+        assert "gauges.gd.sum|-100.000000|%d\n" % now in out
+        assert "gauges.gd.mean|-50.000000|%d\n" % now in out
 
     def test_counters(self, servers):
         "Tests adding kv pairs"
