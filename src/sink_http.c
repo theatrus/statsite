@@ -12,7 +12,7 @@
 #include "strbuf.h"
 
 const int DEFAULT_WORKERS = 4;
-const int QUEUE_MAX_SIZE = 10 * 1024 * 1024; /* 10 MB of data */
+const int QUEUE_MAX_SIZE = 100 * 1024 * 1024; /* 100 MB of data */
 const int DEFAULT_TIMEOUT_SECONDS = 30;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
 
