@@ -636,6 +636,7 @@ param_hello=foo\n\
 oauth_key=hi\n\
 oauth_secret=boo\n\
 oauth_token_url=https://example.com/token\n\
+max_buffer_size=131072\n\
 \n\
 \n\
 ";
@@ -656,7 +657,7 @@ oauth_token_url=https://example.com/token\n\
     fail_unless(config.daemonize == true);
     fail_unless(strcmp(config.pid_file, "/tmp/statsite.pid") == 0);
     fail_unless(strcmp(config.input_counter, "foobar") == 0);
-
+    fail_unless(config.max_buffer_size == 131072);
     sink_config *c = config.sink_configs;
     fail_unless(c != NULL);
     fail_unless(c->type == SINK_TYPE_HTTP);
