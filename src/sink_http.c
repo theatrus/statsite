@@ -451,7 +451,7 @@ sink* init_http_sink(const sink_config_http* sc, const statsite_config* config) 
 
     pthread_mutex_init(&s->sink_mutex, NULL);
 
-    int queue_size = s->max_buffer_size > QUEUE_MAX_SIZE ? QUEUE_MAX_SIZE : s->max_buffer_size;
+    int queue_size = sc->max_buffer_size > QUEUE_MAX_SIZE ? QUEUE_MAX_SIZE : sc->max_buffer_size;
     syslog(LOG_NOTICE, "HTTP: using maximum queue size of %d", queue_size);
     lifoq_new(&s->queue, queue_size);
     for (int i = 0; i < DEFAULT_WORKERS; i++)
