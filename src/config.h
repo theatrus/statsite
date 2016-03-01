@@ -68,6 +68,7 @@ typedef struct sink_config_http {
     const char* oauth_key; /* OAuth2 Consumer Key */
     const char* oauth_secret; /* OAuth2 Secret */
     const char* oauth_token_url; /* URL to get a new token from */
+    int max_buffer_size; /* LIFOQ maximum queue size */
 } sink_config_http;
 
 // Represents the configuration of a histogram
