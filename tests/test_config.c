@@ -657,7 +657,7 @@ max_buffer_size=131072\n\
     fail_unless(config.daemonize == true);
     fail_unless(strcmp(config.pid_file, "/tmp/statsite.pid") == 0);
     fail_unless(strcmp(config.input_counter, "foobar") == 0);
-    fail_unless(config.max_buffer_size == 131072);
+
     sink_config *c = config.sink_configs;
     fail_unless(c != NULL);
     fail_unless(c->type == SINK_TYPE_HTTP);
@@ -689,7 +689,7 @@ max_buffer_size=131072\n\
     fail_unless(strcmp("hi", ch->oauth_key) == 0);
     fail_unless(strcmp("boo", ch->oauth_secret) == 0);
     fail_unless(strcmp("https://example.com/token", ch->oauth_token_url) == 0);
-
+    fail_unless(ch->max_buffer_size == 131072);
     unlink("/tmp/ss_sink_multi");
 }
 END_TEST
