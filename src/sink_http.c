@@ -5,13 +5,14 @@
 #include <curl/curl.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "lifoq.h"
 #include "metrics.h"
 #include "sink.h"
 #include "strbuf.h"
 
-const int DEFAULT_WORKERS = 4;
+const int DEFAULT_WORKERS = 2;
 const int QUEUE_MAX_SIZE = 100 * 1024 * 1024; /* 100 MB of data */
 const int DEFAULT_TIMEOUT_SECONDS = 30;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
@@ -328,6 +329,9 @@ static void* http_worker(void* arg) {
     struct http_sink* s = (struct http_sink*)arg;
     const sink_config_http* httpconfig = (sink_config_http*)s->sink.sink_config;
 
+    struct drand48_data randbuf;
+    srand48_r(time(0), &randbuf);
+
     char* error_buffer = malloc(CURL_ERROR_SIZE + 1);
     strbuf *recv_buf;
 
@@ -350,6 +354,15 @@ static void* http_worker(void* arg) {
         int ret = lifoq_get(s->queue, &data, &data_size);
         if (ret == LIFOQ_CLOSED)
             goto exit;
+
+        /* Delay sending stats until a fixed interval has elapsed */
+        if (httpconfig->send_backoff_ms > 0) {
+            double random_delay = 0;
+            drand48_r(&randbuf, &random_delay);
+            random_delay = random_delay * (double)httpconfig->send_backoff_ms;
+            syslog(LOG_NOTICE, "HTTP: waiting %d ms", (int)random_delay);
+            usleep((useconds_t)random_delay * 1000);
+        }
 
         /* Hold the sink mutex for any state, such as auth cookies,
          * which may be mutated by more than one worker. */
