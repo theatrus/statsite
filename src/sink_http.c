@@ -351,6 +351,11 @@ static void* http_worker(void* arg) {
         if (ret == LIFOQ_CLOSED)
             goto exit;
 
+        /* Delay sending stats until a fixed interval has elapsed */
+        if (httpconfig->send_backoff_ms > 0) {
+            usleep(httpconfig->send_backoff_ms * 1000);
+        }
+
         /* Hold the sink mutex for any state, such as auth cookies,
          * which may be mutated by more than one worker. */
         pthread_mutex_lock(&s->sink_mutex);
