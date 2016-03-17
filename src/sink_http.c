@@ -75,8 +75,16 @@ static int add_metrics(void* data,
         json_object_set_new(obj, full_name, json_real(*(double*)value));
         break;
     case GAUGE:
-        json_object_set_new(obj, full_name, json_real(*(double*)value));
+    {
+        const int suffix_space = 8;
+        char suffixed[base_len + suffix_space];
+
+        strcpy(suffixed, full_name);
+        json_object_set_new(obj, full_name, json_real(gauge_value(value)));
+        SUFFIX_ADD(".sum", json_real(gauge_sum(value)));
+        SUFFIX_ADD(".mean", json_real(gauge_mean(value)));
         break;
+    }
     case COUNTER:
     {
         if (config->extended_counters) {
@@ -217,6 +225,7 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
     if (push_ret) {
         syslog(LOG_ERR, "HTTP Sink couldn't enqueue a %d size buffer - rejected code %d",
                post_len, push_ret);
+        free(post_data);
     }
 
     return 0;
