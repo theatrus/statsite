@@ -167,6 +167,43 @@ int handle_client_connect(statsite_conn_handler *handle) {
 }
 
 /**
+ * Simple string to double conversion
+ */
+static double str2double(const char *s, char **end) {
+    double val = 0.0;
+    char neg = 0;
+    const char *orig_s = s;
+
+    switch (*s) {
+        case '-':
+            neg = 1;
+        case '+':
+            s++;
+    }
+    for (; *s >= '0' && *s <= '9'; s++) {
+        val = (val * 10.0) + (*s - '0');
+    }
+    if (*s == '.') {
+        s++;
+        double frac = 0.0;
+        int digits = 0;
+        for (; *s >= '0' && *s <= '9'; s++) {
+            frac = (frac * 10.0) + (*s - '0');
+            digits++;
+        }
+        val += frac / pow(10.0, digits);
+    }
+    if (unlikely(*s == 'E' || *s == 'e')) {
+        errno = 0;
+        return strtod(orig_s, end);
+    }
+    if (neg) val *= -1.0;
+    if (end) *end = (char*)s;
+    errno = 0;
+    return val;
+}
+
+/**
  * Invoked to handle ASCII commands. This is the default
  * mode for statsite, to be backwards compatible with statsd
  * @arg handle The connection related information
@@ -177,7 +214,9 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
     char *buf, *key, *val_str, *type_str, *sample_str, *endptr;
     metric_type type;
     int buf_len, should_free, status, i, after_len;
-    double val, sample_rate;
+    double val;
+    double sample_rate = 1.0;
+    
     while (1) {
         status = extract_to_terminator(handle->conn, '\n', &buf, &buf_len, &should_free);
         if (status == -1) return 0; // Return if no command is available
@@ -224,7 +263,7 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
 
         // Increment the number of inputs received
         if (GLOBAL_CONFIG->input_counter)
-            metrics_add_sample(GLOBAL_METRICS, COUNTER, GLOBAL_CONFIG->input_counter, 1);
+            metrics_add_sample(GLOBAL_METRICS, COUNTER, GLOBAL_CONFIG->input_counter, 1, sample_rate);
 
         // Fast track the set-updates
         if (type == SET) {
@@ -233,7 +272,7 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
         }
 
         // Convert the value to a double
-        val = strtod(val_str, &endptr);
+        val = str2double(val_str, &endptr);
         if (unlikely(endptr == val_str)) {
             syslog(LOG_WARNING, "Failed value conversion! Input: %s", val_str);
             goto ERR_RET;
@@ -241,19 +280,22 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
 
         // Handle counter sampling if applicable
         if (type == COUNTER && !buffer_after_terminator(type_str, after_len, '@', &sample_str, &after_len)) {
-            sample_rate = strtod(sample_str, &endptr);
+            double unchecked_rate = str2double(sample_str, &endptr);
             if (unlikely(endptr == sample_str)) {
                 syslog(LOG_WARNING, "Failed sample rate conversion! Input: %s", sample_str);
                 goto ERR_RET;
             }
-            if (sample_rate > 0 && sample_rate <= 1) {
+            if (likely(unchecked_rate > 0 && unchecked_rate <= 1)) {
+                sample_rate = unchecked_rate;
                 // Magnify the value
-                val = val * (1.0 / sample_rate);
+                if (type == COUNTER) {
+                    val = val * (1.0 / sample_rate);
+                }
             }
         }
 
         // Store the sample
-        metrics_add_sample(GLOBAL_METRICS, type, buf, val);
+        metrics_add_sample(GLOBAL_METRICS, type, buf, val, sample_rate);
 
 END_LOOP:
         // Make sure to free the command buffer if we need to
@@ -295,7 +337,7 @@ static int handle_binary_set(statsite_conn_handler *handle, uint16_t *header, in
 
     // Increment the input counter
     if (GLOBAL_CONFIG->input_counter)
-        metrics_add_sample(GLOBAL_METRICS, COUNTER, GLOBAL_CONFIG->input_counter, 1);
+        metrics_add_sample(GLOBAL_METRICS, COUNTER, GLOBAL_CONFIG->input_counter, 1, 1.0);
 
     // Update the set
     metrics_set_update(GLOBAL_METRICS, key, key+header[1]);
@@ -385,10 +427,10 @@ static int handle_binary_client_connect(statsite_conn_handler *handle) {
 
         // Increment the input counter
         if (GLOBAL_CONFIG->input_counter)
-            metrics_add_sample(GLOBAL_METRICS, COUNTER, GLOBAL_CONFIG->input_counter, 1);
+            metrics_add_sample(GLOBAL_METRICS, COUNTER, GLOBAL_CONFIG->input_counter, 1, 1.0);
 
         // Add the sample
-        metrics_add_sample(GLOBAL_METRICS, type, (char*)key, *(double*)(cmd+4));
+        metrics_add_sample(GLOBAL_METRICS, type, (char*)key, *(double*)(cmd+4), 1.0);
 
         // Make sure to free the command buffer if we need to
         if (unlikely(should_free)) free(cmd);
