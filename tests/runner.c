@@ -88,6 +88,7 @@ int main(void)
     tcase_add_test(tc5, test_counter_init);
     tcase_add_test(tc5, test_counter_init_add);
     tcase_add_test(tc5, test_counter_add_loop);
+    tcase_add_test(tc5, test_counter_sample_rate);
 
     // Add the gauge tests
     suite_add_tcase(s1, tc6);

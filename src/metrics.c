@@ -103,9 +103,10 @@ int destroy_metrics(metrics *m) {
  * by a value.
  * @arg name The name of the counter
  * @arg val The value to add
+ * @arg sample_rate the sample rate of val
  * @return 0 on success
  */
-static int metrics_increment_counter(metrics *m, char *name, double val) {
+static int metrics_increment_counter(metrics *m, char *name, double val, double sample_rate) {
     counter *c;
     int res = hashmap_get(m->counters, name, (void**)&c);
 
@@ -117,7 +118,7 @@ static int metrics_increment_counter(metrics *m, char *name, double val) {
     }
 
     // Add the sample value
-    return counter_add_sample(c, val);
+    return counter_add_sample(c, val, sample_rate);
 }
 
 /**
@@ -206,9 +207,10 @@ static int metrics_set_gauge(metrics *m, char *name, double val, bool delta) {
  * arg type The type of the metrics
  * @arg name The name of the metric
  * @arg val The sample to add
+ * @arg sample_rate The sample rate of val
  * @return 0 on success.
  */
-int metrics_add_sample(metrics *m, metric_type type, char *name, double val) {
+int metrics_add_sample(metrics *m, metric_type type, char *name, double val, double sample_rate) {
     switch (type) {
         case KEY_VAL:
             return metrics_add_kv(m, name, val);
@@ -220,7 +222,7 @@ int metrics_add_sample(metrics *m, metric_type type, char *name, double val) {
             return metrics_set_gauge(m, name, val, true);
 
         case COUNTER:
-            return metrics_increment_counter(m, name, val);
+            return metrics_increment_counter(m, name, val, sample_rate);
 
         case TIMER:
             return metrics_add_timer_sample(m, name, val);

@@ -3,11 +3,12 @@
 #include <stdint.h>
 
 typedef struct {
-    uint64_t count;     // Count of items
-    double sum;         // Sum of the values
-    double squared_sum; // Sum of the squared values
-    double min;         // Minimum value
-    double max;         // Maximum value
+    uint64_t actual_count;	// actual items received
+    uint64_t count;     	// Count of items
+    double sum;         	// Sum of the values
+    double squared_sum; 	// Sum of the squared values
+    double min;         	// Minimum value
+    double max;         	// Maximum value
 } counter;
 
 /**
@@ -21,9 +22,10 @@ int init_counter(counter *counter);
  * Adds a new sample to the struct
  * @arg counter The counter to add to
  * @arg sample The new sample value
+ * @arg sample_rate the sample rate of sample
  * @return 0 on success.
  */
-int counter_add_sample(counter *counter, double sample);
+int counter_add_sample(counter *counter, double sample, double sample_rate);
 
 /**
  * Returns the number of samples in the counter
