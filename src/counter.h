@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 typedef struct {
-	uint64_t actual_count;	// actual items received
+    uint64_t actual_count;	// actual items received
     uint64_t count;     	// Count of items
     double sum;         	// Sum of the values
     double squared_sum; 	// Sum of the squared values
