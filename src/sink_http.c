@@ -83,6 +83,8 @@ static int add_metrics(void* data,
         json_object_set_new(obj, full_name, json_real(gauge_value(value)));
         SUFFIX_ADD(".sum", json_real(gauge_sum(value)));
         SUFFIX_ADD(".mean", json_real(gauge_mean(value)));
+        SUFFIX_ADD(".min", json_real(gauge_min(value)));
+        SUFFIX_ADD(".max", json_real(gauge_max(value)));
         break;
     }
     case COUNTER:

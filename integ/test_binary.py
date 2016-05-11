@@ -143,6 +143,8 @@ class TestInteg(object):
         assert "gauges.g1|5.000000|%d\n" % now in out
         assert "gauges.g1.sum|126.000000|%d\n" % now in out
         assert "gauges.g1.mean|42.000000|%d\n" % now in out
+        assert "gauges.g1.min|1.000000|%d\n" % now in out
+        assert "gauges.g1.max|120.000000|%d\n" % now in out
 
     def test_gauges_delta(self, servers):
         "Tests adding gauges"
@@ -156,6 +158,8 @@ class TestInteg(object):
         assert "gauges.gd|100.000000|%d\n" % now in out
         assert "gauges.gd.sum|100.000000|%d\n" % now in out
         assert "gauges.gd.mean|50.000000|%d\n" % now in out
+        assert "gauges.gd.min|50.000000|%d\n" % now in out
+        assert "gauges.gd.max|50.000000|%d\n" % now in out
 
     def test_gauges_delta_neg(self, servers):
         "Tests adding gauges"
@@ -169,6 +173,8 @@ class TestInteg(object):
         assert "gauges.gd|-100.000000|%d\n" % now in out
         assert "gauges.gd.sum|-100.000000|%d\n" % now in out
         assert "gauges.gd.mean|-50.000000|%d\n" % now in out
+        assert "gauges.gd.min|-50.000000|%d\n" % now in out
+        assert "gauges.gd.max|-50.000000|%d\n" % now in out
 
 
     def test_counters(self, servers):
@@ -239,6 +245,9 @@ class TestIntegUDP(object):
         assert "gauges.g1|5.000000|%d\n" % now in out
         assert "gauges.g1.sum|126.000000|%d\n" % now in out
         assert "gauges.g1.mean|42.000000|%d\n" % now in out
+        assert "gauges.g1.min|1.000000|%d\n" % now in out
+        assert "gauges.g1.max|120.000000|%d\n" % now in out
+
 
     def test_gauges_delta(self, servers):
         "Tests adding gauges"
@@ -251,6 +260,8 @@ class TestIntegUDP(object):
         assert "gauges.gd|100.000000|%d\n" % now in out
         assert "gauges.gd.sum|100.000000|%d\n" % now in out
         assert "gauges.gd.mean|50.000000|%d\n" % now in out
+        assert "gauges.gd.min|50.000000|%d\n" % now in out
+        assert "gauges.gd.max|50.000000|%d\n" % now in out
 
 
     def test_gauges_delta_neg(self, servers):
@@ -264,6 +275,9 @@ class TestIntegUDP(object):
         assert "gauges.gd|-100.000000|%d\n" % now in out
         assert "gauges.gd.sum|-100.000000|%d\n" % now in out
         assert "gauges.gd.mean|-50.000000|%d\n" % now in out
+        assert "gauges.gd.min|-50.000000|%d\n" % now in out
+        assert "gauges.gd.max|-50.000000|%d\n" % now in out
+
 
 
     def test_counters(self, servers):
