@@ -12,20 +12,19 @@ int init_gauge(gauge_t *gauge) {
 }
 
 int gauge_add_sample(gauge_t *gauge, double sample, bool delta) {
-    if (gauge->count == 0) {
-        gauge->min = gauge->max = sample;
-    }
-
     if (delta) {
         gauge->value += sample;
     } else {
         gauge->value = sample;
     }
 
-    if (gauge->min > sample)
+    if (gauge->count == 0) {
+        gauge->min = gauge->max = sample;
+    } else if (gauge->min > sample) {
         gauge->min = sample;
-    else if (gauge->max < sample)
+    } else if (gauge->max < sample) {
         gauge->max = sample;
+    }
 
     gauge->sum += sample;
     gauge->count++;
