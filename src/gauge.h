@@ -7,8 +7,8 @@ typedef struct {
     uint64_t count;     // Count of items
     double sum;         // Sum of the values
     double value;       // redundant if count == 1, keeping it to reduce footprint of changes
-    double min;			// min of all of the gauge samples recieved
-    double max;			// max of all of the gauge samples received
+    double min;         // min of all of the gauge samples recieved
+    double max;         // max of all of the gauge samples received
 } gauge_t;
 
 
