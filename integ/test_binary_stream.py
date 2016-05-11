@@ -266,6 +266,8 @@ class TestInteg(object):
         assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 200) in out
         assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["sum"], 900) in out
         assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["mean"], 300) in out
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["min"], 200) in out
+        assert format_output(now, "g1", BIN_TYPES["g"], VAL_TYPE_MAP["max"], 500) in out
 
 
     def test_counters(self, servers):
@@ -390,6 +392,9 @@ class TestIntegPrefix(object):
         assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["kv"], 300) in out
         assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["sum"], 900) in out
         assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["mean"], 300) in out
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["min"], 100) in out
+        assert format_output(now, "gauges.g1", BIN_TYPES["g"], VAL_TYPE_MAP["max"], 500) in out
+ 
 
 
     def test_counters(self, serversPrefix):
