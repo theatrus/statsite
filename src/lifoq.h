@@ -45,4 +45,9 @@ extern int lifoq_get(lifoq* q, void** data, size_t* size);
  */
 extern int lifoq_close(lifoq* q);
 
+/**
+ * Check if a lifoq is closed. Non-zero return if it is closed, or an error code (LIFOQ_INTERNAL_ERROR)
+ */
+extern int lifoq_is_closed(struct lifoq* q);
+
 #endif

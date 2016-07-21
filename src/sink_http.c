@@ -367,12 +367,20 @@ static void* http_worker(void* arg) {
             goto exit;
 
         /* Delay sending stats until a fixed interval has elapsed */
-        if (httpconfig->send_backoff_ms > 0) {
+        if (httpconfig->send_backoff_ms > 0 && !lifoq_is_closed(s->queue)) {
             double random_delay = 0;
             drand48_r(&randbuf, &random_delay);
             random_delay = random_delay * (double)httpconfig->send_backoff_ms;
             syslog(LOG_NOTICE, "HTTP: waiting %d ms", (int)random_delay);
-            usleep((useconds_t)random_delay * 1000);
+            suseconds_t delay_for = (useconds_t)random_delay * 1000;
+            while (delay_for > 0) {
+                /* Check if the queue is draining/closed, and abort sleep if needed. */
+                if (lifoq_is_closed(s->queue))
+                    break;
+                usleep(1000);
+                delay_for -= 1000;
+
+            }
         }
 
         /* Hold the sink mutex for any state, such as auth cookies,
