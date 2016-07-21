@@ -74,6 +74,20 @@ int lifoq_close(struct lifoq* q) {
     return ret;
 }
 
+int lifoq_is_closed(struct lifoq* q) {
+    int ret = 0;
+    if (pthread_mutex_lock(&q->mutex))
+        return LIFOQ_INTERNAL_ERROR;
+
+    if (q->closed)
+        ret = 1;
+
+    if (pthread_mutex_unlock(&q->mutex))
+        ret = LIFOQ_INTERNAL_ERROR;
+
+    return ret;
+}
+
 int lifoq_get(struct lifoq* q, void** data, size_t* size) {
     pthread_mutex_lock(&q->mutex);
     for(;;) {
