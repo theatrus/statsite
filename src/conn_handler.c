@@ -244,7 +244,7 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
         }
 
         // Handle counter sampling if applicable
-        if (type == COUNTER && !buffer_after_terminator(type_str, after_len, '@', &sample_str, &after_len)) {
+        if ((type == COUNTER || type == TIMER) && !buffer_after_terminator(type_str, after_len, '@', &sample_str, &after_len)) {
             double unchecked_rate = strtod(sample_str, &endptr);
             if (unlikely(endptr == sample_str)) {
                 syslog(LOG_WARNING, "Failed sample rate conversion! Input: %s", sample_str);
