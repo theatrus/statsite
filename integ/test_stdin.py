@@ -66,7 +66,7 @@ width=10
     return proc.stdin, output
 
 
-def wait_file(path, timeout=5):
+def wait_file(path, timeout=15):
     "Waits on a file to be make"
     start = time.time()
     while not os.path.isfile(path) and time.time() - start < timeout:
