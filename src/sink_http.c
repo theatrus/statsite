@@ -117,8 +117,6 @@ static int add_metrics(void* data,
         const int suffix_space = 40;
         char suffixed[base_len + suffix_space];
         strcpy(suffixed, full_name);
-        SUFFIX_ADD(".sum", json_real(timer_sum(&t->tm)));
-        SUFFIX_ADD(".sum_sq", json_real(timer_squared_sum(&t->tm)));
         SUFFIX_ADD(".mean", json_real(timer_mean(&t->tm)));
         SUFFIX_ADD(".lower", json_real(timer_min(&t->tm)));
         SUFFIX_ADD(".upper", json_real(timer_max(&t->tm)));

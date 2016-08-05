@@ -226,7 +226,7 @@ def format_output_count(time, key, type, val_type, val, count):
     prefix = format_output(time, key, type, val_type, val)
     return prefix + COUNT_VAL.pack(count)
 
-def wait_file(path, timeout=5):
+def wait_file(path, timeout=15):
     "Waits on a file to be make"
     start = time.time()
     while not os.path.isfile(path) and time.time() - start < timeout:
@@ -308,8 +308,6 @@ class TestInteg(object):
         if format_output(now - 1, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sum"], 4950) in out:
             now = now - 1
 
-        assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sum"], 4950) in out
-        assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sum sq"], 328350) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["min"], 0) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["max"], 99) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["count"], 100) in out
@@ -435,8 +433,6 @@ class TestIntegPrefix(object):
         if format_output(now - 1, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sum"], 4950) in out:
             now = now - 1
 
-        assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sum"], 4950) in out
-        assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sum sq"], 328350) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["min"], 0) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["max"], 99) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["count"], 100) in out

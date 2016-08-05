@@ -92,8 +92,6 @@ static int stream_formatter_bin(FILE *pipe, void *data, metric_type type, char *
 
         case TIMER:
             t = (timer_hist*)value;
-            STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_SUM, timer_sum(&t->tm));
-            STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_SUM_SQ, timer_squared_sum(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_MEAN, timer_mean(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_COUNT, timer_count(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_STDDEV, timer_stddev(&t->tm));
@@ -171,8 +169,6 @@ static int stream_formatter(FILE *pipe, void *data, metric_type type, char *name
 
         case TIMER:
             t = (timer_hist*)value;
-            STREAM("%s%s.sum|%f|%lld\n", prefix, name, timer_sum(&t->tm));
-            STREAM("%s%s.sum_sq|%f|%lld\n", prefix, name, timer_squared_sum(&t->tm));
             STREAM("%s%s.mean|%f|%lld\n", prefix, name, timer_mean(&t->tm));
             STREAM("%s%s.lower|%f|%lld\n", prefix, name, timer_min(&t->tm));
             STREAM("%s%s.upper|%f|%lld\n", prefix, name, timer_max(&t->tm));
