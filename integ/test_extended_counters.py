@@ -79,7 +79,7 @@ command = %s
     return conn, conn2, output
 
 
-def wait_file(path, timeout=5):
+def wait_file(path, timeout=15):
     "Waits on a file to be make"
     start = time.time()
     while not os.path.isfile(path) and time.time() - start < timeout:
@@ -102,9 +102,7 @@ class TestInteg(object):
         out = open(output).read()
         assert "counts.foobar.count|3" in out
         assert "counts.foobar.mean|200" in out
-        assert "counts.foobar.stdev|100" in out
         assert "counts.foobar.sum|600" in out
-        assert "counts.foobar.sum_sq|140000" in out
         assert "counts.foobar.lower|100" in out
         assert "counts.foobar.upper|300" in out
         assert "counts.foobar.rate|600" in out
@@ -120,9 +118,7 @@ class TestInteg(object):
         out = open(output).read()
         assert "counts.foobar.count|3" in out
         assert "counts.foobar.mean|2000" in out
-        assert "counts.foobar.stdev|1000" in out
         assert "counts.foobar.sum|6000" in out
-        assert "counts.foobar.sum_sq|1400000" in out
         assert "counts.foobar.lower|1000" in out
         assert "counts.foobar.upper|3000" in out
         assert "counts.foobar.rate|6000" in out

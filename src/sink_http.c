@@ -96,9 +96,7 @@ static int add_metrics(void* data,
             strcpy(suffixed, full_name);
             SUFFIX_ADD(".count", json_integer(counter_count(value)));
             SUFFIX_ADD(".mean", json_real(counter_mean(value)));
-            SUFFIX_ADD(".stdev", json_real(counter_stddev(value))); /* stdev matches other output */
             SUFFIX_ADD(".sum", json_real(counter_sum(value)));
-            SUFFIX_ADD(".sum_sq", json_real(counter_squared_sum(value)));
             SUFFIX_ADD(".lower", json_real(counter_min(value)));
             SUFFIX_ADD(".upper", json_real(counter_max(value)));
             SUFFIX_ADD(".rate", json_real(counter_sum(value) / config->flush_interval));
@@ -117,13 +115,10 @@ static int add_metrics(void* data,
         const int suffix_space = 40;
         char suffixed[base_len + suffix_space];
         strcpy(suffixed, full_name);
-        SUFFIX_ADD(".sum", json_real(timer_sum(&t->tm)));
-        SUFFIX_ADD(".sum_sq", json_real(timer_squared_sum(&t->tm)));
         SUFFIX_ADD(".mean", json_real(timer_mean(&t->tm)));
         SUFFIX_ADD(".lower", json_real(timer_min(&t->tm)));
         SUFFIX_ADD(".upper", json_real(timer_max(&t->tm)));
         SUFFIX_ADD(".count", json_integer(timer_count(&t->tm)));
-        SUFFIX_ADD(".stdev", json_real(timer_stddev(&t->tm))); /* stdev matches other output */
         for (int i = 0; i < config->num_quantiles; i++) {
             char ptile[suffix_space];
             snprintf(ptile, suffix_space, ".p%0.0f", config->quantiles[i] * 100);

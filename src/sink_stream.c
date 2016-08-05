@@ -77,10 +77,8 @@ static int stream_formatter_bin(FILE *pipe, void *data, metric_type type, char *
 
         case COUNTER:
             STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_SUM, counter_sum(value));
-            STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_SUM_SQ, counter_squared_sum(value));
             STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_MEAN, counter_mean(value));
             STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_COUNT, counter_count(value));
-            STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_STDDEV, counter_stddev(value));
             STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_MIN, counter_min(value));
             STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_MAX, counter_max(value));
             STREAM_BIN(BIN_TYPE_COUNTER, BIN_OUT_RATE, counter_sum(value) / ct->global_config->flush_interval);
@@ -92,11 +90,8 @@ static int stream_formatter_bin(FILE *pipe, void *data, metric_type type, char *
 
         case TIMER:
             t = (timer_hist*)value;
-            STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_SUM, timer_sum(&t->tm));
-            STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_SUM_SQ, timer_squared_sum(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_MEAN, timer_mean(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_COUNT, timer_count(&t->tm));
-            STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_STDDEV, timer_stddev(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_MIN, timer_min(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_MAX, timer_max(&t->tm));
             STREAM_BIN(BIN_TYPE_TIMER, BIN_OUT_RATE, timer_sum(&t->tm) / ct->global_config->flush_interval);
@@ -154,9 +149,7 @@ static int stream_formatter(FILE *pipe, void *data, metric_type type, char *name
             if (ct->global_config->extended_counters) {
                 STREAM("%s%s.count|%" PRIu64 "|%lld\n", prefix, name, counter_count(value));
                 STREAM("%s%s.mean|%f|%lld\n", prefix, name, counter_mean(value));
-                STREAM("%s%s.stdev|%f|%lld\n", prefix, name, counter_stddev(value));
                 STREAM("%s%s.sum|%f|%lld\n", prefix, name, counter_sum(value));
-                STREAM("%s%s.sum_sq|%f|%lld\n", prefix, name, counter_squared_sum(value));
                 STREAM("%s%s.lower|%f|%lld\n", prefix, name, counter_min(value));
                 STREAM("%s%s.upper|%f|%lld\n", prefix, name, counter_max(value));
                 STREAM("%s%s.rate|%f|%lld\n", prefix, name, counter_sum(value) / ct->global_config->flush_interval);
@@ -171,13 +164,10 @@ static int stream_formatter(FILE *pipe, void *data, metric_type type, char *name
 
         case TIMER:
             t = (timer_hist*)value;
-            STREAM("%s%s.sum|%f|%lld\n", prefix, name, timer_sum(&t->tm));
-            STREAM("%s%s.sum_sq|%f|%lld\n", prefix, name, timer_squared_sum(&t->tm));
             STREAM("%s%s.mean|%f|%lld\n", prefix, name, timer_mean(&t->tm));
             STREAM("%s%s.lower|%f|%lld\n", prefix, name, timer_min(&t->tm));
             STREAM("%s%s.upper|%f|%lld\n", prefix, name, timer_max(&t->tm));
             STREAM("%s%s.count|%" PRIu64 "|%lld\n", prefix, name, timer_count(&t->tm));
-            STREAM("%s%s.stdev|%f|%lld\n", prefix, name, timer_stddev(&t->tm));
             for (i=0; i < ct->global_config->num_quantiles; i++) {
                 if (ct->global_config->quantiles[i] == 0.5) {
                     STREAM("%s%s.median|%f|%lld\n", prefix, name, timer_query(&t->tm, 0.5));

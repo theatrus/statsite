@@ -88,7 +88,7 @@ width=10
     return conn, conn2, output
 
 
-def wait_file(path, timeout=5):
+def wait_file(path, timeout=15):
     "Waits on a file to be make"
     start = time.time()
     while not os.path.isfile(path) and time.time() - start < timeout:
@@ -191,13 +191,10 @@ class TestInteg(object):
 
         wait_file(output)
         out = open(output).read()
-        assert "timers.val.sum|4950" in out
-        assert "timers.val.sum_sq|328350" in out
         assert "timers.val.mean|49.500000" in out
         assert "timers.val.lower|0.000000" in out
         assert "timers.val.upper|99.000000" in out
         assert "timers.val.count|100" in out
-        assert "timers.val.stdev|29.011492" in out
         assert "timers.val.median|49.000000" in out
         assert "timers.val.p90|90.000000" in out
         assert "timers.val.p95|95.000000" in out
@@ -215,13 +212,10 @@ class TestInteg(object):
 
         wait_file(output)
         out = open(output).read()
-        assert "timers.noobs.sum|4950" in out
-        assert "timers.noobs.sum_sq|328350" in out
         assert "timers.noobs.mean|49.500000" in out
         assert "timers.noobs.lower|0.000000" in out
         assert "timers.noobs.upper|99.000000" in out
         assert "timers.noobs.count|100" in out
-        assert "timers.noobs.stdev|29.011492" in out
         assert "timers.noobs.median|49.000000" in out
         assert "timers.noobs.p90|90.000000" in out
         assert "timers.noobs.p95|95.000000" in out
@@ -396,13 +390,10 @@ class TestIntegUDP(object):
         server.sendall(msg)
         wait_file(output)
         out = open(output).read()
-        assert "timers.noobs.sum|4950" in out
-        assert "timers.noobs.sum_sq|328350" in out
         assert "timers.noobs.mean|49.500000" in out
         assert "timers.noobs.lower|0.000000" in out
         assert "timers.noobs.upper|99.000000" in out
         assert "timers.noobs.count|100" in out
-        assert "timers.noobs.stdev|29.011492" in out
         assert "timers.noobs.median|49.000000" in out
         assert "timers.noobs.p90|90.000000" in out
         assert "timers.noobs.p95|95.000000" in out
