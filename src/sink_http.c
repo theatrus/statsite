@@ -96,9 +96,7 @@ static int add_metrics(void* data,
             strcpy(suffixed, full_name);
             SUFFIX_ADD(".count", json_integer(counter_count(value)));
             SUFFIX_ADD(".mean", json_real(counter_mean(value)));
-            SUFFIX_ADD(".stdev", json_real(counter_stddev(value))); /* stdev matches other output */
             SUFFIX_ADD(".sum", json_real(counter_sum(value)));
-            SUFFIX_ADD(".sum_sq", json_real(counter_squared_sum(value)));
             SUFFIX_ADD(".lower", json_real(counter_min(value)));
             SUFFIX_ADD(".upper", json_real(counter_max(value)));
             SUFFIX_ADD(".rate", json_real(counter_sum(value) / config->flush_interval));
