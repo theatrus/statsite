@@ -33,7 +33,6 @@ START_TEST(test_timer_init_add_destroy)
     fail_unless(timer_min(&t) == 100);
     fail_unless(timer_max(&t) == 100);
     fail_unless(timer_mean(&t) == 100);
-    fail_unless(timer_stddev(&t) == 0);
     fail_unless(timer_query(&t, 0.5) == 100);
 
     res = destroy_timer(&t);
@@ -55,7 +54,6 @@ START_TEST(test_timer_add_loop)
     fail_unless(timer_min(&t) == 1);
     fail_unless(timer_max(&t) == 100);
     fail_unless(timer_mean(&t) == 50.5);
-    fail_unless(round(timer_stddev(&t)*1000)/1000 == 29.011);
     fail_unless(timer_query(&t, 0.5) == 50);
     fail_unless(timer_query(&t, 0.90) >= 89 && timer_query(&t, 0.90) <= 91);
     fail_unless(timer_query(&t, 0.99) >= 98 && timer_query(&t, 0.99) <= 100);

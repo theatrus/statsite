@@ -171,7 +171,6 @@ class TestInteg(object):
         assert "timers.noobs.lower|0.000000" in out
         assert "timers.noobs.upper|99.000000" in out
         assert "timers.noobs.count|100" in out
-        assert "timers.noobs.stdev|29.011492" in out
         assert "timers.noobs.median|49.000000" in out
         assert "timers.noobs.p95|95.000000" in out
         assert "timers.noobs.p99|99.000000" in out

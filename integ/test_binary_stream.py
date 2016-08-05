@@ -311,7 +311,6 @@ class TestInteg(object):
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["min"], 0) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["max"], 99) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["count"], 100) in out
-        assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["stddev"], 29.011491975882016) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["mean"], 49.5) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["rate"], 4950) in out
         assert format_output(now, "noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sample_rate"], 100) in out
@@ -436,7 +435,6 @@ class TestIntegPrefix(object):
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["min"], 0) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["max"], 99) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["count"], 100) in out
-        assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["stddev"], 29.011491975882016) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["mean"], 49.5) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["rate"], 4950) in out
         assert format_output(now, "timers.noobs", BIN_TYPES["ms"], VAL_TYPE_MAP["sample_rate"], 100) in out

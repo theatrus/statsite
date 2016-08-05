@@ -121,7 +121,6 @@ static int add_metrics(void* data,
         SUFFIX_ADD(".lower", json_real(timer_min(&t->tm)));
         SUFFIX_ADD(".upper", json_real(timer_max(&t->tm)));
         SUFFIX_ADD(".count", json_integer(timer_count(&t->tm)));
-        SUFFIX_ADD(".stdev", json_real(timer_stddev(&t->tm))); /* stdev matches other output */
         for (int i = 0; i < config->num_quantiles; i++) {
             char ptile[suffix_space];
             snprintf(ptile, suffix_space, ".p%0.0f", config->quantiles[i] * 100);

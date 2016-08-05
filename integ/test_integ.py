@@ -195,7 +195,6 @@ class TestInteg(object):
         assert "timers.val.lower|0.000000" in out
         assert "timers.val.upper|99.000000" in out
         assert "timers.val.count|100" in out
-        assert "timers.val.stdev|29.011492" in out
         assert "timers.val.median|49.000000" in out
         assert "timers.val.p90|90.000000" in out
         assert "timers.val.p95|95.000000" in out
@@ -217,7 +216,6 @@ class TestInteg(object):
         assert "timers.noobs.lower|0.000000" in out
         assert "timers.noobs.upper|99.000000" in out
         assert "timers.noobs.count|100" in out
-        assert "timers.noobs.stdev|29.011492" in out
         assert "timers.noobs.median|49.000000" in out
         assert "timers.noobs.p90|90.000000" in out
         assert "timers.noobs.p95|95.000000" in out
@@ -396,7 +394,6 @@ class TestIntegUDP(object):
         assert "timers.noobs.lower|0.000000" in out
         assert "timers.noobs.upper|99.000000" in out
         assert "timers.noobs.count|100" in out
-        assert "timers.noobs.stdev|29.011492" in out
         assert "timers.noobs.median|49.000000" in out
         assert "timers.noobs.p90|90.000000" in out
         assert "timers.noobs.p95|95.000000" in out
