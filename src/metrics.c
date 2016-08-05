@@ -128,7 +128,7 @@ static int metrics_increment_counter(metrics *m, char *name, double val, double 
  * @arg val The sample to add
  * @return 0 on success.
  */
-static int metrics_add_timer_sample(metrics *m, char *name, double val, double sample_rate) {
+static int metrics_add_timer_sample(metrics *m, char *name, double val) {
     timer_hist *t;
     histogram_config *conf;
     int res = hashmap_get(m->timers, name, (void**)&t);
@@ -163,7 +163,7 @@ static int metrics_add_timer_sample(metrics *m, char *name, double val, double s
     }
 
     // Add the sample value
-    return timer_add_sample(&t->tm, val, sample_rate);
+    return timer_add_sample(&t->tm, val);
 }
 
 /**
@@ -225,7 +225,7 @@ int metrics_add_sample(metrics *m, metric_type type, char *name, double val, dou
             return metrics_increment_counter(m, name, val, sample_rate);
 
         case TIMER:
-            return metrics_add_timer_sample(m, name, val, sample_rate);
+            return metrics_add_timer_sample(m, name, val);
 
         default:
             return -1;

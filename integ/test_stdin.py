@@ -147,9 +147,9 @@ class TestInteg(object):
     def test_counters_sample(self, servers):
         "Tests adding kv pairs"
         server, output = servers
-        server.write("foobar:100|c@0.1\n")
-        server.write("foobar:200|c@0.1\n")
-        server.write("foobar:300|c@0.1\n")
+        server.write("foobar:100|c|@0.1\n")
+        server.write("foobar:200|c|@0.1\n")
+        server.write("foobar:300|c|@0.1\n")
 
         wait_file(output)
         now = time.time()
