@@ -4,6 +4,7 @@
 #include "cm_quantile.h"
 
 typedef struct {
+    uint64_t actual_count; // Actual items recieved
     uint64_t count;     // Count of items
     double sum;         // Sum of the values
     double squared_sum; // Sum of the squared values
@@ -32,9 +33,10 @@ int destroy_timer(timer *timer);
  * Adds a new sample to the struct
  * @arg timer The timer to add to
  * @arg sample The new sample value
+ * @arg sample_rate The sampler rate
  * @return 0 on success.
  */
-int timer_add_sample(timer *timer, double sample);
+int timer_add_sample(timer *timer, double sample, double sample_rate);
 
 /**
  * Queries for a quantile value
