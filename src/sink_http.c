@@ -216,7 +216,7 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
 
     int post_len = 0;
     char* post_data = strbuf_get(post_buf, &post_len);
-    strbuf_free(post_buf, false);
+    strbuf_free(post_buf, true);
 
     int push_ret = lifoq_push(sink->queue, post_data, post_len, true, false);
     if (push_ret) {
