@@ -507,10 +507,11 @@ static int config_callback(void* user, const char* section, const char* name, co
  * @arg config Output. The config object to prepare strings.
  */
 
-int prepare_prefixes(statsite_config *config)
+char *prepare_prefixes(statsite_config *config)
 {
     int res;
-    char *final_prefix, *type_prefix = "";
+    char *final_prefix = NULL;
+    char *type_prefix = "";
     for (int i=0; i < METRIC_TYPES; i++) {
         // Get the type prefix
         if (config->use_type_prefix) {
@@ -522,7 +523,7 @@ int prepare_prefixes(statsite_config *config)
         assert(res != -1);
         config->prefixes_final[i] = final_prefix;
     }
-    return 0;
+    return final_prefix;
 }
 
 /**
@@ -775,6 +776,13 @@ void free_config(statsite_config* config) {
     if (config->prefixes[COUNTER] != NULL) {
         free(config->prefixes[COUNTER]);
     }
+
+    for (int i = 0; i < METRIC_TYPES; i++) {
+        if (config->prefixes_final[i] != NULL) {
+            free(config->prefixes_final[i]);
+        }
+    }
+
     free(config);
 }
 

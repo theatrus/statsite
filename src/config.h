@@ -143,7 +143,7 @@ int config_from_filename(char *filename, statsite_config *config);
  * @arg config Output. The config object to prepare strings.
  */
 
-int prepare_prefixes(statsite_config *config);
+char *prepare_prefixes(statsite_config *config);
 
 /**
  * Validates the configuration

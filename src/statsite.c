@@ -135,6 +135,7 @@ int main(int argc, char **argv) {
 
     // Parse the command line
     char *config_file = NULL;
+    char *final_prefix = NULL;
     int parse_res = parse_cmd_line_args(argc, argv, &config_file);
     if (parse_res) return 1;
 
@@ -159,7 +160,8 @@ int main(int argc, char **argv) {
     setup_syslog(config->syslog_log_facility, config->daemonize);
 
     // Set prefixes for each message type
-    if (prepare_prefixes(config)) {
+
+    if (prepare_prefixes(config) == NULL) {
         syslog(LOG_ERR, "Failed to get prefixes!");
         return 1;
     }
@@ -254,6 +256,9 @@ int main(int argc, char **argv) {
 
     // Free our memory
     free_config(config);
+
+    // free final prefix
+    free(final_prefix);
 
     // Tear down libcurl
     curl_global_cleanup();
