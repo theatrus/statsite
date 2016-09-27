@@ -216,13 +216,15 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
 
     int post_len = 0;
     char* post_data = strbuf_get(post_buf, &post_len);
-    strbuf_free(post_buf, true);
+
+    strbuf_free(post_buf, false);
 
     int push_ret = lifoq_push(sink->queue, post_data, post_len, true, false);
     if (push_ret) {
         syslog(LOG_ERR, "HTTP Sink couldn't enqueue a %d size buffer - rejected code %d",
                post_len, push_ret);
-        free(post_data);
+        post_data = NULL;
+        strbuf_free(post_buf, true);
     }
 
     return 0;
@@ -370,8 +372,10 @@ static void* http_worker(void* arg) {
             suseconds_t delay_for = (useconds_t)random_delay * 1000;
             while (delay_for > 0) {
                 /* Check if the queue is draining/closed, and abort sleep if needed. */
-                if (lifoq_is_closed(s->queue))
-                    break;
+                if (lifoq_is_closed(s->queue)) {
+                    syslog(LOG_NOTICE, "Lifo queue has been closed, freeing memory!");
+                    goto exit;
+                }
                 usleep(1000);
                 delay_for -= 1000;
 
@@ -387,8 +391,9 @@ static void* http_worker(void* arg) {
 
         if (should_authenticate && s->oauth_bearer == NULL) {
             if (!oauth2_get_token(httpconfig, s)) {
-                if (lifoq_push(s->queue, data, data_size, true, true))
+                if (lifoq_push(s->queue, data, data_size, true, true)) {
                     syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+                }
                 pthread_mutex_unlock(&s->sink_mutex);
                 continue;
             }
@@ -430,8 +435,12 @@ static void* http_worker(void* arg) {
 
             syslog(LOG_ERR, "HTTP: error %d: %s %s", rcurl, error_buffer, recv_data);
             /* Re-enqueue data */
-            if (lifoq_push(s->queue, data, data_size, true, true))
+            if (lifoq_push(s->queue, data, data_size, true, true)) {
+                if (data != NULL)
+                    free(data);
+                strbuf_free(recv_buf, true);
                 syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+            }
 
             /* Remove any authentication token - this will cause us to get a new one */
             pthread_mutex_lock(&s->sink_mutex);
