@@ -390,6 +390,8 @@ static void* http_worker(void* arg) {
             if (!oauth2_get_token(httpconfig, s)) {
                 if (lifoq_push(s->queue, data, data_size, true, true)) {
                     syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+                    if (data != NULL)
+                        free(data);
                 }
                 pthread_mutex_unlock(&s->sink_mutex);
                 continue;
