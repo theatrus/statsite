@@ -223,8 +223,7 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
     if (push_ret) {
         syslog(LOG_ERR, "HTTP Sink couldn't enqueue a %d size buffer - rejected code %d",
                post_len, push_ret);
-        post_data = NULL;
-        strbuf_free(post_buf, true);
+        free(post_data);
     }
 
     return 0;
@@ -372,10 +371,8 @@ static void* http_worker(void* arg) {
             suseconds_t delay_for = (useconds_t)random_delay * 1000;
             while (delay_for > 0) {
                 /* Check if the queue is draining/closed, and abort sleep if needed. */
-                if (lifoq_is_closed(s->queue)) {
-                    syslog(LOG_NOTICE, "Lifo queue has been closed, freeing memory!");
-                    goto exit;
-                }
+                if (lifoq_is_closed(s->queue))
+                    break;
                 usleep(1000);
                 delay_for -= 1000;
 
@@ -438,7 +435,6 @@ static void* http_worker(void* arg) {
             if (lifoq_push(s->queue, data, data_size, true, true)) {
                 if (data != NULL)
                     free(data);
-                strbuf_free(recv_buf, true);
                 syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
             }
 
