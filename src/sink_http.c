@@ -216,6 +216,7 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
 
     int post_len = 0;
     char* post_data = strbuf_get(post_buf, &post_len);
+
     strbuf_free(post_buf, false);
 
     int push_ret = lifoq_push(sink->queue, post_data, post_len, true, false);
@@ -387,8 +388,11 @@ static void* http_worker(void* arg) {
 
         if (should_authenticate && s->oauth_bearer == NULL) {
             if (!oauth2_get_token(httpconfig, s)) {
-                if (lifoq_push(s->queue, data, data_size, true, true))
+                if (lifoq_push(s->queue, data, data_size, true, true)) {
                     syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+                    if (data != NULL)
+                        free(data);
+                }
                 pthread_mutex_unlock(&s->sink_mutex);
                 continue;
             }
@@ -430,8 +434,11 @@ static void* http_worker(void* arg) {
 
             syslog(LOG_ERR, "HTTP: error %d: %s %s", rcurl, error_buffer, recv_data);
             /* Re-enqueue data */
-            if (lifoq_push(s->queue, data, data_size, true, true))
+            if (lifoq_push(s->queue, data, data_size, true, true)) {
+                if (data != NULL)
+                    free(data);
                 syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+            }
 
             /* Remove any authentication token - this will cause us to get a new one */
             pthread_mutex_lock(&s->sink_mutex);

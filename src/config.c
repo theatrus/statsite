@@ -766,6 +766,22 @@ void free_config(statsite_config* config) {
     if (config->quantiles != default_quantiles) {
         free (config->quantiles);
     }
+    if (config->log_level != NULL) {
+        free(config->log_level);
+    }
+    if (config->pid_file != NULL) {
+        free(config->pid_file);
+    }
+    if (config->prefixes[COUNTER] != NULL) {
+        free(config->prefixes[COUNTER]);
+    }
+
+    for (int i = 0; i < METRIC_TYPES; i++) {
+        if (config->prefixes_final[i] != NULL) {
+            free(config->prefixes_final[i]);
+        }
+    }
+
     free(config);
 }
 
