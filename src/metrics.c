@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "metrics.h"
 #include "set.h"
 
@@ -129,6 +130,11 @@ static int metrics_increment_counter(metrics *m, char *name, double val, double 
  * @return 0 on success.
  */
 static int metrics_add_timer_sample(metrics *m, char *name, double val, double sample_rate) {
+    if (isnan(val)) {
+        syslog(LOG_ERR, "Invalid timer sample value supplied, name=%s", name);
+        return -1;
+    }
+
     timer_hist *t;
     histogram_config *conf;
     int res = hashmap_get(m->timers, name, (void**)&t);
