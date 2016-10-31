@@ -185,7 +185,12 @@ START_TEST(test_metrics_histogram)
     fail_unless(metrics_add_sample(&m, TIMER, "zip", 10, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, TIMER, "zip", -1, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, TIMER, "zip", 50, 1.0) == 0);
+
+    // Invalid metric values result in timer values not converging
+    // while computing quantiles, checks for them!
     fail_unless(metrics_add_sample(&m, TIMER, "foo",  sqrt(-1), 1.0 ) == -1);
+    fail_unless(metrics_add_sample(&m, TIMER, "foo",  (-1.0 / 0.0), 1.0 ) == -1);
+    fail_unless(metrics_add_sample(&m, TIMER, "foo",  (1.0 / 0.0), 1.0 ) == -1);
 
     int okay = 0;
     fail_unless(metrics_iter(&m, (void*)&okay, iter_test_histogram) == 0);
