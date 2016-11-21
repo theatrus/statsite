@@ -60,12 +60,12 @@ class Tracker(object):
 
         self.logger.info("Processing %d metrics" % len(metrics))
         for m in metrics:
-            if self.r_counter.match(m):
+            if self.r_gauge.match(m):
+                self.n_gauge += 1
+            elif self.r_counter.match(m):
                 self.n_counter += 1
             elif self.r_timer.match(m):
                 self.n_timer += 1
-            else:
-                self.n_gauge += 1
 
         # Write gauges to statsrelay for tracking
         try:
