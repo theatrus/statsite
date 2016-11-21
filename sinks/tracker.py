@@ -102,8 +102,8 @@ class Tracker(object):
                     self.sock.sendto(item.encode('utf-8'), self.addr)
 
                 return
-            except socket.error, msg:
-                self.logger.error('Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+            except socket.error:
+                self.logger.error('Failed to send')
                 self.sock = self._create_socket()
 
         self.logger.critical("Failed to write metrics to statsrelay. Gave up after %d attempts." % self.attempts)
