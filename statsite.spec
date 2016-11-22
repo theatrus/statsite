@@ -123,6 +123,7 @@ exit 0
 %attr(755, root, root) /usr/libexec/statsite/sinks/gmetric.py
 %attr(755, root, root) /usr/libexec/statsite/sinks/influxdb.py
 %attr(755, root, root) /usr/libexec/statsite/sinks/graphite.py
+%attr(755, root, root) /usr/libexec/statsite/sinks/tracker.py
 %attr(755, root, root) /usr/libexec/statsite/sinks/cloudwatch.sh
 %attr(755, root, root) /usr/libexec/statsite/sinks/opentsdb.js
 
