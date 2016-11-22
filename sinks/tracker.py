@@ -6,11 +6,12 @@ import logging
 
 
 """
-Simple stream sink to read stdin for incoming metrics and does some
-bookkeeping to track number of unique metric for each type
-(namely counter, gauge or timer).
+Simple stream sink to read stdin for incoming metrics of the format
+`key|val|timestamp\n`
 
-Finally sends some gauges to localhost:8125
+and tracks the number of unique timers, gauges and counters
+
+Finally sends the gauges to localhost:8125
 """
 
 class Tracker(object):
