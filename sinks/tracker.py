@@ -70,9 +70,9 @@ class Tracker(object):
         # Write gauges to statsrelay for tracking
         try:
             message = list()
-            message.append("statsite.timer:{0}|{1}".format(self.n_timer, self.GAUGE))
-            message.append("statsite.gauge:{0}|{1}".format(self.n_gauge, self.GAUGE))
-            message.append("statsite.counter:{0}|{1}".format(self.n_counter, self.GAUGE))
+            message.append("statsite.timer_s_:{0}|{1}".format(self.n_timer, self.GAUGE))
+            message.append("statsite.gauge_s_:{0}|{1}".format(self.n_gauge, self.GAUGE))
+            message.append("statsite.counter_s_:{0}|{1}".format(self.n_counter, self.GAUGE))
 
             self._flush_metrics(message)
         except:
