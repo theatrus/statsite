@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+
+import fileinput
 import sys
 import re
 import socket
@@ -44,40 +46,31 @@ class Tracker(object):
         self.n_counter = 0
         self.n_gauge = 0
         self.n_timer = 0
+        self.n_lines = 0
         self.logger = logging.getLogger("statsite.tracker")
 
-    def measure(self, metrics):
+    def measure(self, metric):
         """
         count unique metrics of each type
 
         :Parameters:
-         - `metrics` : A list of "key|value|timestamp" strings.
+         - `metric` :  statsd metric  "key|value|timestamp" string.
         """
-        if not metrics:
+        if not metric:
             return
 
         # Construct the output
-        metrics = [m.split("|")[0] for m in metrics if m and m.count("|") == 2]
+        if metric and metric.count("|") == 2:
+            metric = metric.split("|")[0]
 
-        self.logger.info("Processing %d metrics" % len(metrics))
-        for m in metrics:
-            if self.r_gauge.match(m):
-                self.n_gauge += 1
-            elif self.r_counter.match(m):
-                self.n_counter += 1
-            elif self.r_timer.match(m):
-                self.n_timer += 1
+        if self.r_gauge.match(metric):
+            self.n_gauge += 1
+        elif self.r_counter.match(metric):
+            self.n_counter += 1
+        elif self.r_timer.match(metric):
+            self.n_timer += 1
 
-        # Write gauges to statsrelay for tracking
-        try:
-            message = list()
-            message.append("statsite.timer_s_:{0}|{1}".format(self.n_timer, self.GAUGE))
-            message.append("statsite.gauge_s_:{0}|{1}".format(self.n_gauge, self.GAUGE))
-            message.append("statsite.counter_s_:{0}|{1}".format(self.n_counter, self.GAUGE))
-
-            self._flush_metrics(message)
-        except:
-            self.logger.exception("Failed to write out the metrics!")
+        self.n_lines += 1
 
     def close(self):
         """
@@ -95,10 +88,18 @@ class Tracker(object):
             self.logger.exception("Failed to connect to statsrelay-base")
             sys.exit(1)
 
-    def _flush_metrics(self, message):
+    def flush_metrics(self):
         """Tries to write a string to the socket, reconnecting on any errors"""
+        # Write gauges to statsrelay for tracking
+        message = list()
+        message.append("statsite.timer_s_:{0}|{1}".format(self.n_timer, self.GAUGE))
+        message.append("statsite.gauge_s_:{0}|{1}".format(self.n_gauge, self.GAUGE))
+        message.append("statsite.counter_s_:{0}|{1}".format(self.n_counter, self.GAUGE))
+
+        self.logger.info("Processing %d metrics" % self.n_lines)
+
         for _ in range(self.attempts):
-            try :
+            try:
                 for item in message:
                     self.sock.sendto(item.encode('utf-8'), self.addr)
 
@@ -118,8 +119,12 @@ if __name__ == "__main__":
     tracker = Tracker(*sys.argv[1:])
 
     # Get all the inputs
-    metrics = sys.stdin.read()
+    line = 0
+    for metric in fileinput.input():
+        tracker.measure(metric.rstrip())
+        line += 1
+
+    tracker.flush_metrics()
 
     # Flush
-    tracker.measure(metrics.splitlines())
     tracker.close()
