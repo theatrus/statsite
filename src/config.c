@@ -41,7 +41,7 @@ static const statsite_config DEFAULT_CONFIG = {
     8125,               // TCP defaults to 8125
     8125,               // UDP on 8125
     "::",               // Listen on all addresses
-    false,              // Do not parse stdin by default
+    false,
     "DEBUG",            // DEBUG level
     LOG_DEBUG,
     "local0",           // local0 logging facility
@@ -61,8 +61,6 @@ static const statsite_config DEFAULT_CONFIG = {
     {"", "kv.", "gauges.", "counts.", "timers.", "sets.", ""},
     {},
     false,              // Extended counts off by default
-    false,              // Do not prefix binary stream by default
-                        // Number of quantiles
     sizeof(default_quantiles) / sizeof(double),
     default_quantiles,  // Quantiles
 };
@@ -72,7 +70,6 @@ static const sink_config_stream DEFAULT_SINK = {
                .name = "default",
                .next = NULL
     },
-    .binary_stream = false,
     .stream_cmd = "cat"
 };
 
@@ -289,9 +286,7 @@ static int sink_callback(void* user, const char* section, const char* name, cons
     case SINK_TYPE_STREAM:
     {
         sink_config_stream* config = (sink_config_stream*)sink_in_progress;
-        if (NAME_MATCH("binary")) {
-            return value_to_bool(value, &config->binary_stream);
-        } else if (NAME_MATCH("command")) {
+        if (NAME_MATCH("command")) {
             config->stream_cmd = strdup(value);
         } else {
             syslog(LOG_NOTICE, "Unrecognized stream sink parameter: %s", name);
@@ -451,9 +446,6 @@ static int config_callback(void* user, const char* section, const char* name, co
         return value_to_bool(value, &config->use_type_prefix);
     } else if (NAME_MATCH("extended_counters")) {
         return value_to_bool(value, &config->extended_counters);
-    } else if (NAME_MATCH("prefix_binary_stream")) {
-        return value_to_bool(value, &config->prefix_binary_stream);
-
     // Handle the double cases
     } else if (NAME_MATCH("timer_eps")) {
         return value_to_double(value, &config->timer_eps);

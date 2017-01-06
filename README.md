@@ -440,7 +440,3 @@ the number of entires which were below this minimum value. The ceiling is the sa
 but visa versa. For bin values, the value is the minimum value of the bin, up to
 but not including the next bin.
 
-To enable the binary sink protocol, add a configuration variable `binary_stream`
-to the configuration file with the value `yes`. An example sink is provided in
-`sinks/binary_sink.py`.
-

@@ -46,11 +46,10 @@ typedef struct sink_config {
 } sink_config;
 
 /**
- * A stream command sink, with a binary option.
+ * A stream command sink
  */
 typedef struct sink_config_stream {
     sink_config super;
-    bool binary_stream;
     const char* stream_cmd;
 } sink_config_stream;
 
@@ -111,7 +110,6 @@ typedef struct {
     char* prefixes[METRIC_TYPES];
     char* prefixes_final[METRIC_TYPES];
     bool extended_counters;
-    bool prefix_binary_stream;
     int num_quantiles;
     double* quantiles;
 } statsite_config;

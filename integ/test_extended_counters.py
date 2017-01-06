@@ -14,8 +14,8 @@ except ImportError:
     print >> sys.stderr, "Integ tests require pytests!"
     sys.exit(1)
 
-
-def pytest_funcarg__servers(request):
+@pytest.fixture
+def servers(request):
     "Returns a new APIHandler with a filter manager"
     # Create tmpdir and delete after
     tmpdir = tempfile.mkdtemp()
