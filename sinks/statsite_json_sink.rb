@@ -4,7 +4,6 @@
 # Usage
 #
 # statsite.ini:
-#   binary_stream = yes
 #   stream_cmd = ruby1.9.3 statsite_json_sink.rb -o /dev/shm/statsite-sink.json -f json
 #
 # available options:

@@ -24,11 +24,9 @@ START_TEST(test_config_get_default)
     fail_unless(strcmp(sc->stream_cmd, "cat") == 0);
     fail_unless(config.flush_interval == 10);
     fail_unless(config.daemonize == false);
-    fail_unless(sc->binary_stream == false);
     fail_unless(strcmp(config.pid_file, "/var/run/statsite.pid") == 0);
     fail_unless(config.input_counter == NULL);
     fail_unless(config.extended_counters == false);
-    fail_unless(config.prefix_binary_stream == false);
     fail_unless(config.num_quantiles == 3);
     fail_unless(config.quantiles[0] == 0.5);
     fail_unless(config.quantiles[1] == 0.95);
@@ -54,11 +52,9 @@ START_TEST(test_config_bad_file)
     fail_unless(strcmp(sc->stream_cmd, "cat") == 0);
     fail_unless(config.flush_interval == 10);
     fail_unless(config.daemonize == false);
-    fail_unless(sc->binary_stream == false);
     fail_unless(strcmp(config.pid_file, "/var/run/statsite.pid") == 0);
     fail_unless(config.input_counter == NULL);
     fail_unless(config.extended_counters == false);
-    fail_unless(config.prefix_binary_stream == false);
     fail_unless(config.num_quantiles == 3);
     fail_unless(config.quantiles[0] == 0.5);
     fail_unless(config.quantiles[1] == 0.95);
@@ -89,11 +85,9 @@ START_TEST(test_config_empty_file)
     fail_unless(strcmp(sc->stream_cmd, "cat") == 0);
     fail_unless(config.flush_interval == 10);
     fail_unless(config.daemonize == false);
-    fail_unless(sc->binary_stream == false);
     fail_unless(strcmp(config.pid_file, "/var/run/statsite.pid") == 0);
     fail_unless(config.input_counter == NULL);
     fail_unless(config.extended_counters == false);
-    fail_unless(config.prefix_binary_stream == false);
     fail_unless(config.num_quantiles == 3);
     fail_unless(config.quantiles[0] == 0.5);
     fail_unless(config.quantiles[1] == 0.95);
@@ -119,7 +113,6 @@ daemonize = true\n\
 input_counter = foobar\n\
 pid_file = /tmp/statsite.pid\n\
 extended_counters = true\n\
-prefix_binary_stream = true\n\
 quantiles = 0.5, 0.90, 0.95, 0.99\n";
     write(fh, buf, strlen(buf));
     fchmod(fh, 777);
@@ -142,7 +135,6 @@ quantiles = 0.5, 0.90, 0.95, 0.99\n";
     fail_unless(strcmp(config.pid_file, "/tmp/statsite.pid") == 0);
     fail_unless(strcmp(config.input_counter, "foobar") == 0);
     fail_unless(config.extended_counters == true);
-    fail_unless(config.prefix_binary_stream == true);
     fail_unless(config.num_quantiles == 4);
     fail_unless(config.quantiles[0] == 0.5);
     fail_unless(config.quantiles[1] == 0.90);
@@ -575,7 +567,6 @@ input_counter = foobar\n\
 pid_file = /tmp/statsite.pid\n\
 \n\
 [sink_stream_main]\n\
-binary=true\n\
 command=cat\n\
 ";
     write(fh, buf, strlen(buf));
@@ -601,7 +592,6 @@ command=cat\n\
     fail_unless(c->type == SINK_TYPE_STREAM);
 
     sink_config_stream *cs = (sink_config_stream*)c;
-    fail_unless(cs->binary_stream == true);
     fail_unless(strcmp(cs->stream_cmd, "cat") == 0);
 
     unlink("/tmp/ss_sink_basic");
@@ -623,12 +613,11 @@ input_counter = foobar\n\
 pid_file = /tmp/statsite.pid\n\
 \n\
 [sink_stream_main]\n\
-binary=true\n\
 command=foo\n\
 \n\
 [sink_stream_other]\n\
-binary=false\n\
 command=not cat\n\
+\n\
 [sink_http_hi]\n\
 url=https://example.com\n\
 param_bar=barbar\n\
@@ -672,9 +661,7 @@ send_backoff_ms=1000\n\
 
     sink_config_stream *cs = (sink_config_stream*)c2;
     sink_config_stream *cs2 = (sink_config_stream*)c3;
-    fail_unless(cs->binary_stream == false);
     fail_unless(strcmp(cs->stream_cmd, "not cat") == 0);
-    fail_unless(cs2->binary_stream == true);
     fail_unless(strcmp(cs2->stream_cmd, "foo") == 0);
 
     sink_config_http *ch = (sink_config_http*)c;

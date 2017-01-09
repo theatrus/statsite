@@ -117,7 +117,6 @@ exit 0
 %dir /var/run/statsite
 %attr(755, statsite, statsite) /var/run/statsite
 %attr(755, root, root) /usr/libexec/statsite/sinks/__init__.py
-%attr(755, root, root) /usr/libexec/statsite/sinks/binary_sink.py
 %attr(755, root, root) /usr/libexec/statsite/sinks/librato.py
 %attr(755, root, root) /usr/libexec/statsite/sinks/statsite_json_sink.rb
 %attr(755, root, root) /usr/libexec/statsite/sinks/gmetric.py
