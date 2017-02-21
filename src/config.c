@@ -89,7 +89,7 @@ static const sink_config_http DEFAULT_HTTP_SINK = {
     .oauth_token_url = NULL,
     .max_buffer_size = 10 * 1024 * 1024, /* 10 MB */
     .send_backoff_ms = 0,
-    .time_out_seconds = 10 /* HTTP post request timeout in seconds */
+    .time_out_seconds = 30 /* HTTP post request timeout in seconds */
 };
 
 /**

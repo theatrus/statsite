@@ -15,7 +15,6 @@
 
 const int DEFAULT_WORKERS = 2;
 const int QUEUE_MAX_SIZE = 100 * 1024 * 1024; /* 100 MB of data */
-const int DEFAULT_TIMEOUT_SECONDS = 30;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
 
 const char* DEFAULT_CIPHERS_NSS = "ecdhe_ecdsa_aes_128_gcm_sha_256,ecdhe_rsa_aes_256_sha,rsa_aes_128_gcm_sha_256,rsa_aes_256_sha,rsa_aes_128_sha";
@@ -266,7 +265,7 @@ static void http_curl_basic_setup(CURL* curl,
                                   strbuf* recv_buf,
                                   const char* ssl_ciphers) {
     /* Setup HTTP parameters */
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, DEFAULT_TIMEOUT_SECONDS);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, httpconfig->time_out_seconds);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, recv_buf);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, recv_cb);
