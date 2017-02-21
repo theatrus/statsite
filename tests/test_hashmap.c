@@ -65,14 +65,18 @@ START_TEST(test_map_put_get)
     fail_unless(res == 0);
 
     char buf[100];
+    int j;
     void *out;
     for (int i=0; i<100;i++) {
         snprintf((char*)&buf, 100, "test%d", i);
-        out = 0 & i;
+        j = 0 & i;
+        out = (void *)&j;
         fail_unless(hashmap_put(map, (char*)buf, out) == 1);
     }
 
-    for (int i=0; i<100;i++) {
+    for (int i = 0; i < 100; i++) {
+        j = 0 & i;
+        out = (void *)&j;
         snprintf((char*)&buf, 100, "test%d", i);
         fail_unless(hashmap_get(map, (char*)buf, &out) == 0);
         fail_unless(out == (0 & i));
@@ -109,9 +113,11 @@ START_TEST(test_map_put_delete)
 
     char buf[100];
     void *out;
+    int j;
     for (int i=0; i<100;i++) {
         snprintf((char*)&buf, 100, "test%d", i);
-        out = 0 & i;
+        j = 0 & i;
+        out = (void *)&j;
         fail_unless(hashmap_put(map, (char*)buf, out) == 1);
     }
     fail_unless(hashmap_size(map) == 100);
