@@ -63,10 +63,12 @@ static int stream_formatter(FILE *pipe, void *data, metric_type type, char *name
                 if (quantile == 0.5) {
                     STREAM("%s%s.median|%f|%lld\n", prefix, name, timer_query(&t->tm, 0.5));
                 }
-                if (to_percentile(quantile, &percentile)) {
-                    syslog(LOG_ERR, "Invalid quantile: %lf", quantile);
-                    break;
-                }
+                /**
+                 * config.c already does sanity checks
+                 * on the quantiles input, dont need to
+                 * worry about it here.
+                 */
+                to_percentile(quantile, &percentile);
                 STREAM("%s%s.p%d|%f|%lld\n", prefix, name, percentile, timer_query(&t->tm, quantile));
             }
             STREAM("%s%s.rate|%f|%lld\n", prefix, name, timer_sum(&t->tm) / ct->global_config->flush_interval);

@@ -123,10 +123,12 @@ static int add_metrics(void* data,
             char ptile[suffix_space];
             int percentile;
             double quantile = config->quantiles[i];
-            if (to_percentile(quantile, &percentile)) {
-                syslog(LOG_ERR, "Invalid quantile: %lf", quantile);
-                break;
-            }
+            /**
+             * config.c already does sanity checks
+             * on the quantiles input, dont need to
+             * worry about it here.
+             */
+            to_percentile(quantile, &percentile);
             snprintf(ptile, suffix_space, ".p%d", percentile);
             ptile[suffix_space-1] = '\0';
             SUFFIX_ADD(ptile, json_real(timer_query(&t->tm, quantile)));
