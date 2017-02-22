@@ -109,9 +109,11 @@ START_TEST(test_map_put_delete)
 
     char buf[100];
     void *out;
+    int j;
     for (int i=0; i<100;i++) {
         snprintf((char*)&buf, 100, "test%d", i);
-        out = 0 & i;
+        j = 0 & i;
+        out = (void *)&j;
         fail_unless(hashmap_put(map, (char*)buf, out) == 1);
     }
     fail_unless(hashmap_size(map) == 100);

@@ -12,7 +12,7 @@
 START_TEST(test_timer_init_and_destroy)
 {
     timer t;
-    double quants[] = {0.5, 0.90, 0.99};
+    double quants[] = {0.5, 0.90, 0.99, 0.999};
     int res = init_timer(0.01, (double*)&quants, 3, &t);
     fail_unless(res == 0);
 
@@ -24,7 +24,7 @@ END_TEST
 START_TEST(test_timer_init_add_destroy)
 {
     timer t;
-    double quants[] = {0.5, 0.90, 0.99};
+    double quants[] = {0.5, 0.90, 0.99, 0.999};
     int res = init_timer(0.01, (double*)&quants, 3, &t);
     fail_unless(res == 0);
 
@@ -34,6 +34,7 @@ START_TEST(test_timer_init_add_destroy)
     fail_unless(timer_max(&t) == 100);
     fail_unless(timer_mean(&t) == 100);
     fail_unless(timer_query(&t, 0.5) == 100);
+    fail_unless(timer_query(&t, 0.999) == 100);
 
     res = destroy_timer(&t);
     fail_unless(res == 0);
@@ -43,7 +44,7 @@ END_TEST
 START_TEST(test_timer_add_loop)
 {
     timer t;
-    double quants[] = {0.5, 0.90, 0.99};
+    double quants[] = {0.5, 0.90, 0.99, 0.999};
     int res = init_timer(0.01, (double*)&quants, 3, &t);
     fail_unless(res == 0);
 
@@ -57,6 +58,7 @@ START_TEST(test_timer_add_loop)
     fail_unless(timer_query(&t, 0.5) == 50);
     fail_unless(timer_query(&t, 0.90) >= 89 && timer_query(&t, 0.90) <= 91);
     fail_unless(timer_query(&t, 0.99) >= 98 && timer_query(&t, 0.99) <= 100);
+    fail_unless(timer_query(&t, 0.999) >= 99 && timer_query(&t, 0.999) <= 100);
 
     res = destroy_timer(&t);
     fail_unless(res == 0);
@@ -66,7 +68,7 @@ END_TEST
 START_TEST(test_timer_sample_rate)
 {
   timer t;
-  double quants[] = {0.5, 0.90, 0.99};
+  double quants[] = {0.5, 0.90, 0.99, 0.999};
   int res = init_timer(0.01, (double*)&quants, 3, &t);
   fail_unless(res == 0);
 
@@ -80,6 +82,7 @@ START_TEST(test_timer_sample_rate)
   fail_unless(timer_query(&t, 0.5) == 50);
   fail_unless(timer_query(&t, 0.90) >= 89 && timer_query(&t, 0.90) <= 91);
   fail_unless(timer_query(&t, 0.99) >= 98 && timer_query(&t, 0.99) <= 100);
+  fail_unless(timer_query(&t, 0.999) >= 99 && timer_query(&t, 0.999) <= 100);
 
   res = destroy_timer(&t);
   fail_unless(res == 0);

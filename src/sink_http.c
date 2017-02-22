@@ -11,10 +11,10 @@
 #include "metrics.h"
 #include "sink.h"
 #include "strbuf.h"
+#include "utils.h"
 
 const int DEFAULT_WORKERS = 2;
 const int QUEUE_MAX_SIZE = 100 * 1024 * 1024; /* 100 MB of data */
-const int DEFAULT_TIMEOUT_SECONDS = 30;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
 
 const char* DEFAULT_CIPHERS_NSS = "ecdhe_ecdsa_aes_128_gcm_sha_256,ecdhe_rsa_aes_256_sha,rsa_aes_128_gcm_sha_256,rsa_aes_256_sha,rsa_aes_128_sha";
@@ -112,7 +112,7 @@ static int add_metrics(void* data,
     {
         timer_hist *t = (timer_hist*)value;
         /* We allow up to 40 characters for the metric name suffix. */
-        const int suffix_space = 40;
+        const int suffix_space = 100;
         char suffixed[base_len + suffix_space];
         strcpy(suffixed, full_name);
         SUFFIX_ADD(".mean", json_real(timer_mean(&t->tm)));
@@ -121,9 +121,17 @@ static int add_metrics(void* data,
         SUFFIX_ADD(".count", json_integer(timer_count(&t->tm)));
         for (int i = 0; i < config->num_quantiles; i++) {
             char ptile[suffix_space];
-            snprintf(ptile, suffix_space, ".p%0.0f", config->quantiles[i] * 100);
+            int percentile;
+            double quantile = config->quantiles[i];
+            /**
+             * config.c already does sanity checks
+             * on the quantiles input, dont need to
+             * worry about it here.
+             */
+            to_percentile(quantile, &percentile);
+            snprintf(ptile, suffix_space, ".p%d", percentile);
             ptile[suffix_space-1] = '\0';
-            SUFFIX_ADD(ptile, json_real(timer_query(&t->tm, config->quantiles[i])));
+            SUFFIX_ADD(ptile, json_real(timer_query(&t->tm, quantile)));
         }
         SUFFIX_ADD(".rate", json_real(timer_sum(&t->tm) / config->flush_interval));
         SUFFIX_ADD(".sample_rate", json_real((double)timer_count(&t->tm) / config->flush_interval));
@@ -259,7 +267,7 @@ static void http_curl_basic_setup(CURL* curl,
                                   strbuf* recv_buf,
                                   const char* ssl_ciphers) {
     /* Setup HTTP parameters */
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, DEFAULT_TIMEOUT_SECONDS);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, httpconfig->time_out_seconds);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, recv_buf);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, recv_cb);
