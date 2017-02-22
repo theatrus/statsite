@@ -112,7 +112,7 @@ static int add_metrics(void* data,
     {
         timer_hist *t = (timer_hist*)value;
         /* We allow up to 40 characters for the metric name suffix. */
-        const int suffix_space = 40;
+        const int suffix_space = 100;
         char suffixed[base_len + suffix_space];
         strcpy(suffixed, full_name);
         SUFFIX_ADD(".mean", json_real(timer_mean(&t->tm)));
