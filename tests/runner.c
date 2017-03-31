@@ -122,6 +122,7 @@ int main(void)
     tcase_add_test(tc9, test_config_bad_file);
     tcase_add_test(tc9, test_config_empty_file);
     tcase_add_test(tc9, test_config_basic_config);
+    tcase_add_test(tc9, test_config_bad_basic_config);
     tcase_add_test(tc9, test_validate_default_config);
     tcase_add_test(tc9, test_validate_bad_config);
     tcase_add_test(tc9, test_join_path_no_slash);

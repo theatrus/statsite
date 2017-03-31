@@ -178,11 +178,11 @@ static int calculate_percentiles(double *quantiles, int **result, int count) {
 
     // make sure we have enough memory
     for (int i = 0; i < count; i++) {
-       quantile = *(quantiles + i);
+       quantile = quantiles[i];
        if (to_percentile(quantile, &percentile) != -1) {
             (*result)[i] = percentile;
        } else {
-            syslog(LOG_WARNING, "failed to calculate percentile");
+            syslog(LOG_WARNING, "failed to calculate percentile for quantile %f", quantile);
             return 0;
        }
     }
