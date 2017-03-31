@@ -170,16 +170,17 @@ static int value_to_list_of_doubles(const char *val, double **result, int *count
     return val[scanned] == '\0';
 }
 
-static int calculate_percentiles(double *quantiles, int **result, int *count) {
+static int calculate_percentiles(double *quantiles, int **result, int count) {
     int percentile;
     double quantile;
 
+    *result = (int*)malloc(count * sizeof(int));
+
     // make sure we have enough memory
-    *result = (int *)realloc(*result, *count * sizeof(int));
-    for (int i = 0; i < *count; i++) {
+    for (int i = 0; i < count; i++) {
        quantile = *(quantiles + i);
        if (to_percentile(quantile, &percentile) != -1) {
-            (*result)[*count - 1] = percentile;
+            (*result)[i] = percentile;
        } else {
             syslog(LOG_WARNING, "failed to calculate percentile");
             return 0;
@@ -481,7 +482,7 @@ static int config_callback(void* user, const char* section, const char* name, co
         if (value_to_list_of_doubles(value, &config->quantiles, &config->num_quantiles)) {
             // succeeded scanning the quantiles in statsite_config
             // calculate corresponding percentiles
-            return calculate_percentiles(config->quantiles, &config->percentiles, &config->num_quantiles);
+            return calculate_percentiles(config->quantiles, &config->percentiles, config->num_quantiles);
         }
     // Copy the string values
     } else if (NAME_MATCH("log_level")) {
@@ -771,11 +772,12 @@ int sane_quantiles(int num_quantiles, double quantiles[]) {
 
 int sane_percentiles(int num_quantiles, int percentiles[]) {
     for (int i = 0; i < num_quantiles; i++) {
-        if (percentiles[i] <= 0 || percentiles[i] >= 100) {
-            syslog(LOG_ERR, "Percentiles must be between 0 and 1");
+        if (percentiles[i] >= -1 && percentiles[i] <= 0) {
+            syslog(LOG_ERR, "Percentiles has to be greater than 0");
             return 1;
         }
     }
+    return 0;
 }
 
 /**

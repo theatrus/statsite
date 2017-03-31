@@ -141,6 +141,11 @@ quantiles = 0.5, 0.90, 0.95, 0.99\n";
     fail_unless(config.quantiles[2] == 0.95);
     fail_unless(config.quantiles[3] == 0.99);
 
+    fail_unless(config.percentiles[0] == 50);
+    fail_unless(config.percentiles[1] == 90);
+    fail_unless(config.percentiles[2] == 95);
+    fail_unless(config.percentiles[3] == 99);
+
     unlink("/tmp/basic_config");
 }
 END_TEST
@@ -356,6 +361,12 @@ width=25\n\
     fail_unless(config.daemonize == true);
     fail_unless(strcmp(config.pid_file, "/tmp/statsite.pid") == 0);
     fail_unless(strcmp(config.input_counter, "foobar") == 0);
+    fail_unless(config.quantiles[0] == 0.5);
+    fail_unless(config.quantiles[1] == 0.95);
+    fail_unless(config.quantiles[2] == 0.99);
+    fail_unless(config.percentiles[0] == 50);
+    fail_unless(config.percentiles[1] == 95);
+    fail_unless(config.percentiles[2] == 99);
 
     histogram_config *c = config.hist_configs;
     fail_unless(c != NULL);

@@ -1,6 +1,8 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
+#include <math.h>
+
 /**
  * Convert a quantile to a percentil integer, such as: 0.50 -> 50, 0.99 -> 99, 0.999 -> 999
  * @arg quantile

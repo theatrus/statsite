@@ -24,7 +24,17 @@ START_TEST(test_percentile_convertion)
     fail_unless(to_percentile(0.5, &percentile) == 0);
     fail_unless(percentile == 50);
 
-    fail_unless(to_percentile(0.999900, &percentile) == 0);
+    fail_unless(to_percentile(0.950000, &percentile) == 0);
+    fail_unless(percentile == 95);
+
+    fail_unless(to_percentile(0.999, &percentile) == 0);
+    fail_unless(percentile == 999);
+
+    fail_unless(to_percentile(0.99990, &percentile) == 0);
     fail_unless(percentile == 9999);
+
+    // this should cause to_percentile to not converge
+    // fail safe should kick in an abruptly exit.
+    fail_unless(to_percentile(0.99999999999, &percentile) == -1);
 }
 END_TEST
