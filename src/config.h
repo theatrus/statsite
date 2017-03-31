@@ -113,6 +113,7 @@ typedef struct {
     bool extended_counters;
     int num_quantiles;
     double* quantiles;
+    int* percentiles;
 } statsite_config;
 
 /**

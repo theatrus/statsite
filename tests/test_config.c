@@ -141,9 +141,44 @@ quantiles = 0.5, 0.90, 0.95, 0.99\n";
     fail_unless(config.quantiles[2] == 0.95);
     fail_unless(config.quantiles[3] == 0.99);
 
+    fail_unless(config.percentiles[0] == 50);
+    fail_unless(config.percentiles[1] == 90);
+    fail_unless(config.percentiles[2] == 95);
+    fail_unless(config.percentiles[3] == 99);
+
     unlink("/tmp/basic_config");
 }
 END_TEST
+
+START_TEST(test_config_bad_basic_config)
+{
+    int fh = open("/tmp/basic_bad_config", O_CREAT|O_RDWR, 0777);
+    char *buf = "[statsite]\n\
+port = 10000\n\
+udp_port = 10001\n\
+parse_stdin = true\n\
+flush_interval = 120\n\
+timer_eps = 0.005\n\
+set_eps = 0.03\n\
+log_level = INFO\n\
+log_facility = local3\n\
+daemonize = true\n\
+input_counter = foobar\n\
+pid_file = /tmp/statsite.pid\n\
+extended_counters = true\n\
+quantiles = 0.5, 0.90, 0.95, 0.99, 0.999999\n";
+    write(fh, buf, strlen(buf));
+    fchmod(fh, 777);
+    close(fh);
+
+    statsite_config config;
+    int res = config_from_filename("/tmp/basic_config", &config);
+    fail_unless(res != 0);
+
+    unlink("/tmp/basic_bad_config");
+}
+END_TEST
+
 
 START_TEST(test_validate_default_config)
 {
@@ -356,6 +391,12 @@ width=25\n\
     fail_unless(config.daemonize == true);
     fail_unless(strcmp(config.pid_file, "/tmp/statsite.pid") == 0);
     fail_unless(strcmp(config.input_counter, "foobar") == 0);
+    fail_unless(config.quantiles[0] == 0.5);
+    fail_unless(config.quantiles[1] == 0.95);
+    fail_unless(config.quantiles[2] == 0.99);
+    fail_unless(config.percentiles[0] == 50);
+    fail_unless(config.percentiles[1] == 95);
+    fail_unless(config.percentiles[2] == 99);
 
     histogram_config *c = config.hist_configs;
     fail_unless(c != NULL);

@@ -11,6 +11,7 @@
 #include "config.h"
 #include "ini.h"
 #include "hll.h"
+#include "utils.h"
 
 /**
  * Allow more succint if blocks
@@ -37,6 +38,7 @@ static sink_config *sink_in_progress;
  * to grow quickly.
  */
 static double default_quantiles[] = {0.5, 0.95, 0.99};
+static int default_percentiles[] = {50, 95, 99};
 static const statsite_config DEFAULT_CONFIG = {
     8125,               // TCP defaults to 8125
     8125,               // UDP on 8125
@@ -63,6 +65,7 @@ static const statsite_config DEFAULT_CONFIG = {
     false,              // Extended counts off by default
     sizeof(default_quantiles) / sizeof(double),
     default_quantiles,  // Quantiles
+    default_percentiles, // Percentiles
 };
 
 static const sink_config_stream DEFAULT_SINK = {
@@ -165,6 +168,25 @@ static int value_to_list_of_doubles(const char *val, double **result, int *count
     sscanf(val, " %n", &scanned);
 
     return val[scanned] == '\0';
+}
+
+static int calculate_percentiles(double *quantiles, int **result, int count) {
+    int percentile;
+    double quantile;
+
+    *result = (int*)malloc(count * sizeof(int));
+
+    // make sure we have enough memory
+    for (int i = 0; i < count; i++) {
+       quantile = quantiles[i];
+       if (to_percentile(quantile, &percentile) != -1) {
+            (*result)[i] = percentile;
+       } else {
+            syslog(LOG_WARNING, "failed to calculate percentile for quantile %f", quantile);
+            return 0;
+       }
+    }
+    return 1;
 }
 
 /**
@@ -457,8 +479,11 @@ static int config_callback(void* user, const char* section, const char* name, co
 
     // Handle quantiles as a comma-separated list of doubles
     } else if (NAME_MATCH("quantiles")) {
-        return value_to_list_of_doubles(value, &config->quantiles, &config->num_quantiles);
-
+        if (value_to_list_of_doubles(value, &config->quantiles, &config->num_quantiles)) {
+            // succeeded scanning the quantiles in statsite_config
+            // calculate corresponding percentiles
+            return calculate_percentiles(config->quantiles, &config->percentiles, config->num_quantiles);
+        }
     // Copy the string values
     } else if (NAME_MATCH("log_level")) {
         config->log_level = strdup(value);
@@ -745,6 +770,16 @@ int sane_quantiles(int num_quantiles, double quantiles[]) {
     return 0;
 }
 
+int sane_percentiles(int num_quantiles, int percentiles[]) {
+    for (int i = 0; i < num_quantiles; i++) {
+        if (percentiles[i] >= -1 && percentiles[i] <= 0) {
+            syslog(LOG_ERR, "Percentiles has to be greater than 0");
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /**
  * Allocates memory for a new config structure
  * @return a pointer to a new config structure on success.
@@ -760,6 +795,9 @@ statsite_config* alloc_config() {
 void free_config(statsite_config* config) {
     if (config->quantiles != default_quantiles) {
         free (config->quantiles);
+    }
+    if (config->percentiles != default_percentiles) {
+        free(config->percentiles);
     }
     if (config->log_level != NULL) {
         free(config->log_level);
@@ -796,6 +834,7 @@ int validate_config(statsite_config *config) {
     res |= sane_histograms(config->hist_configs);
     res |= sane_set_precision(config->set_eps, &config->set_precision);
     res |= sane_quantiles(config->num_quantiles, config->quantiles);
+    res |= sane_percentiles(config->num_quantiles, config->percentiles);
 
     return res;
 }

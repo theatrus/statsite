@@ -13,6 +13,11 @@ int to_percentile(double quantile, int *percentile) {
      */
     while (quantile != (int)quantile) {
         quantile *= 10;
+
+        // fail safe
+        if (isinf(quantile)) {
+            return -1;
+        }
     }
     *percentile = (int) quantile;
     return 0;
