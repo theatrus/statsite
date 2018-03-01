@@ -18,7 +18,7 @@
 
 /* Static method declarations */
 static int handle_ascii_client_connect(statsite_conn_handler *handle);
-static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse);
+static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse_lookup);
 
 /**
  * This is the current metrics object we are using
@@ -269,12 +269,12 @@ ERR_RET:
  * @arg terminator The terminator to scan to. Replaced with the null terminator.
  * @arg after_term Output. Set to the byte after the terminator.
  * @arg after_len Output. Set to the length of the output buffer.
- * @arg reverse scan the input string in reverse order
+ * @arg reverse_lookup scan the input string in reverse order
  * @return 0 if terminator found. -1 otherwise.
  */
-static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse) {
-    char* term_addr = reverse ? memrchr(buf, terminator, buf_len)
-                              : memchr(buf, terminator, buf_len);
+static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse_lookup) {
+    char* term_addr = reverse_lookup ? memrchr(buf, terminator, buf_len)
+                                     : memchr(buf, terminator, buf_len);
     if (!term_addr) {
         *after_term = NULL;
         return -1;
