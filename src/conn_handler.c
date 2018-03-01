@@ -274,7 +274,7 @@ ERR_RET:
  */
 static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse) {
     char* term_addr = reverse ? memrchr(buf, terminator, buf_len)
-                              : memrchr(buf, terminator, buf_len);
+                              : memchr(buf, terminator, buf_len);
     if (!term_addr) {
         *after_term = NULL;
         return -1;
