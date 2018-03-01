@@ -156,7 +156,7 @@ class TestInteg(object):
 
 
     def test_counters(self, servers):
-        "Tests adding kv pairs"
+        "Tests adding counters"
         server, _, output = servers
         server.sendall("foobar:100|c\n")
         server.sendall("foobar:200|c\n")
@@ -167,6 +167,21 @@ class TestInteg(object):
         out = open(output).read()
         assert out in ("counts.foobar|600.000000|%d\n" % (now),
                        "counts.foobar|600.000000|%d\n" % (now - 1))
+
+
+    def test_special_counters(self, servers):
+        "Tests adding counters"
+        server, _, output = servers
+        server.sendall("foobar.__tag1=v1.__tag2=v2:v2:100|c\n")
+        server.sendall("foobar.__tag1=v1.__tag2=v2:v2:200|c\n")
+        server.sendall("foobar.__tag1=v1.__tag2=v2:v2:300|c\n")
+
+        wait_file(output)
+        now = time.time()
+        out = open(output).read()
+        assert out in ("counts.foobar.__tag1=v1.__tag2=v2:v2|600.000000|%d\n" % (now),
+                       "counts.foobar.__tag1=v1.__tag2=v2:v2|600.000000|%d\n" % (now - 1))
+
 
     def test_counters_sample(self, servers):
         "Tests adding kv pairs"
@@ -204,7 +219,7 @@ class TestInteg(object):
         assert "timers.val.sample_rate|100" in out
 
     def test_meters(self, servers):
-        "Tests adding kv pairs"
+        "Tests adding timers"
         server, _, output = servers
         msg = ""
         for x in xrange(100):
@@ -360,7 +375,7 @@ class TestIntegUDP(object):
                        "counts.foobar|600.000000|%d\n" % (now - 1))
 
     def test_counters_sample(self, servers):
-        "Tests adding kv pairs"
+        "Tests adding counters"
         _, server, output = servers
         server.sendall("foobar:100|c|@0.1\n")
         server.sendall("foobar:200|c|@0.1\n")
@@ -370,6 +385,18 @@ class TestIntegUDP(object):
         out = open(output).read()
         assert out in ("counts.foobar|6000.000000|%d\n" % (now),
                        "counts.foobar|6000.000000|%d\n" % (now - 1))
+
+    def test_counters_sample_special(self, servers):
+        "Tests adding counters"
+        _, server, output = servers
+        server.sendall("foobar:v1.__tag1=v1.sample.__tag2=v2:100|c|@0.1\n")
+        server.sendall("foobar:v1.__tag1=v1.sample.__tag2=v2:200|c|@0.1\n")
+        server.sendall("foobar:v1.__tag1=v1.sample.__tag2=v2:300|c|@0.1\n")
+        wait_file(output)
+        now = time.time()
+        out = open(output).read()
+        assert out in ("counts.foobar:v1.__tag1=v1.sample.__tag2=v2|6000.000000|%d\n" % (now),
+                       "counts.foobar:v1.__tag1=v1.sample.__tag2=v2|6000.000000|%d\n" % (now - 1))
 
     def test_counters_no_newlines(self, servers):
         "Tests adding counters without a trailing new line"

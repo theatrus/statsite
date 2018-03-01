@@ -18,7 +18,7 @@
 
 /* Static method declarations */
 static int handle_ascii_client_connect(statsite_conn_handler *handle);
-static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len);
+static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse_lookup);
 
 /**
  * This is the current metrics object we are using
@@ -175,8 +175,8 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
 
         // Check for a valid metric
         // Scan for the colon
-        status = buffer_after_terminator(buf, buf_len, ':', &val_str, &after_len);
-        if (likely(!status)) status |= buffer_after_terminator(val_str, after_len, '|', &type_str, &after_len);
+        status = buffer_after_terminator(buf, buf_len, ':', &val_str, &after_len, true);
+        if (likely(!status)) status |= buffer_after_terminator(val_str, after_len, '|', &type_str, &after_len, false);
         if (unlikely(status)) {
             syslog(LOG_WARNING, "Failed parse metric! Input: %s", buf);
             goto ERR_RET;
@@ -231,7 +231,7 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
         }
 
         // Handle counter sampling if applicable
-        if ((type == COUNTER || type == TIMER) && !buffer_after_terminator(type_str, after_len, '@', &sample_str, &after_len)) {
+        if ((type == COUNTER || type == TIMER) && !buffer_after_terminator(type_str, after_len, '@', &sample_str, &after_len, false)) {
             double unchecked_rate = strtod(sample_str, &endptr);
             if (unlikely(endptr == sample_str)) {
                 syslog(LOG_WARNING, "Failed sample rate conversion! Input: %s", sample_str);
@@ -269,11 +269,12 @@ ERR_RET:
  * @arg terminator The terminator to scan to. Replaced with the null terminator.
  * @arg after_term Output. Set to the byte after the terminator.
  * @arg after_len Output. Set to the length of the output buffer.
+ * @arg reverse_lookup scan the input string in reverse order
  * @return 0 if terminator found. -1 otherwise.
  */
-static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len) {
-    // Scan for a space
-    char *term_addr = memchr(buf, terminator, buf_len);
+static int buffer_after_terminator(char *buf, int buf_len, char terminator, char **after_term, int *after_len, bool reverse_lookup) {
+    char* term_addr = reverse_lookup ? memrchr(buf, terminator, buf_len)
+                                     : memchr(buf, terminator, buf_len);
     if (!term_addr) {
         *after_term = NULL;
         return -1;
