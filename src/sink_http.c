@@ -12,6 +12,8 @@
 #include "sink.h"
 #include "strbuf.h"
 #include "utils.h"
+#include "rand.h"
+#include "elide.h"
 
 const int DEFAULT_WORKERS = 2;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
@@ -22,21 +24,42 @@ const char* DEFAULT_CIPHERS_OPENSSL = "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES2
 const char* USERAGENT = "statsite-http/0";
 const char* OAUTH2_GRANT = "grant_type=client_credentials";
 
+const int ELIDE_PERIOD = 5;
+
 struct http_sink {
     sink sink;
     lifoq* queue;
     pthread_t* worker;
     pthread_mutex_t sink_mutex;
     char* oauth_bearer;
+    elide_t *elide;
+    int elide_skip;
 };
 
 /*
  * Data from the metrics_iter callback */
 struct cb_info {
     json_t* jobject;
+    elide_t *elide;
     const statsite_config* config;
     const sink_config_http *httpconfig;
+    struct timeval now;
 };
+
+/*
+ * Check if the sink's elision output buffer is not initialized, or
+ * if it requires re-initialization to purge old metrics.
+ */
+static void sink_elide_refresh(struct http_sink* s) {
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    now.tv_sec -= 60*15;
+    if (s->elide == NULL) {
+        elide_init(&s->elide, s->elide_skip % ELIDE_PERIOD);
+    } else {
+        elide_gc(s->elide, now);
+    }
+}
 
 /*
  * TODO: There is a lot redundant code here with sink_stream to normalize
@@ -93,9 +116,18 @@ static int add_metrics(void* data,
             const int suffix_space = 8;
             char suffixed[base_len + suffix_space];
             strcpy(suffixed, full_name);
+            double sum = counter_sum(value);
+            if (sum == 0) {
+                int res = elide_mark(info->elide, full_name, info->now);
+                if (res % ELIDE_PERIOD != info->elide->skip) {
+                    break;
+                }
+            } else {
+                elide_unmark(info->elide, full_name, info->now);
+            }
             SUFFIX_ADD(".count", json_integer(counter_count(value)));
             SUFFIX_ADD(".mean", json_real(counter_mean(value)));
-            SUFFIX_ADD(".sum", json_real(counter_sum(value)));
+            SUFFIX_ADD(".sum", json_real(sum));
             SUFFIX_ADD(".lower", json_real(counter_min(value)));
             SUFFIX_ADD(".upper", json_real(counter_max(value)));
             SUFFIX_ADD(".rate", json_real(counter_sum(value) / config->flush_interval));
@@ -168,11 +200,19 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
     json_t* jobject = json_object();
     const sink_config_http* httpconfig = (const sink_config_http*)sink->sink.sink_config;
 
+    struct timeval now;
+    gettimeofday(&now, NULL);
+
     struct cb_info info = {
+        .elide = sink->elide,
         .jobject = jobject,
         .config = sink->sink.global_config,
-        .httpconfig = httpconfig
+        .httpconfig = httpconfig,
+        .now = now,
     };
+
+    sink_elide_refresh(sink);
+
     /* produce a metrics json object */
     metrics_iter(m, &info, add_metrics);
 
@@ -343,8 +383,13 @@ static void* http_worker(void* arg) {
     struct http_sink* s = (struct http_sink*)arg;
     const sink_config_http* httpconfig = (sink_config_http*)s->sink.sink_config;
 
+    long int rand_seed;
+    if (rand_gather((char*)&rand_seed, sizeof(long int)) == -1) {
+        syslog(LOG_NOTICE, "Falling back on system time to seed HTTP rand");
+        rand_seed = time(0);
+    }
     struct drand48_data randbuf;
-    srand48_r(time(0), &randbuf);
+    srand48_r(rand_seed, &randbuf);
 
     char* error_buffer = malloc(CURL_ERROR_SIZE + 1);
     strbuf *recv_buf;
@@ -489,6 +534,14 @@ sink* init_http_sink(const sink_config_http* sc, const statsite_config* config) 
     s->sink.command = (int (*)(sink*, metrics*, void*))serialize_metrics;
     s->sink.close = (void (*)(sink*))close_sink;
     s->worker = malloc(sizeof(pthread_t) * DEFAULT_WORKERS);
+
+    int elide_generation_add = 0;
+    if (rand_gather((char*)&elide_generation_add, sizeof(int)) == -1) {
+        syslog(LOG_NOTICE, "HTTP: elision generation jitter not initialized");
+    }
+    s->elide_skip = elide_generation_add % ELIDE_PERIOD;
+
+    sink_elide_refresh(s);
 
     pthread_mutex_init(&s->sink_mutex, NULL);
 
