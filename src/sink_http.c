@@ -61,6 +61,22 @@ static void sink_elide_refresh(struct http_sink* s) {
     }
 }
 
+/**
+ * Check and report if this metric is elided or not.
+ * Returns: 0 if not, 1 if elided and should be skipped
+ */
+static int check_elide(struct cb_info* info, char* full_name, double value) {
+    if (value == 0) {
+        int res = elide_mark(info->elide, full_name, info->now);
+        if (res % ELIDE_PERIOD != info->elide->skip) {
+            return 1;
+        }
+    } else {
+        elide_unmark(info->elide, full_name, info->now);
+    }
+    return 0;
+}
+
 /*
  * TODO: There is a lot redundant code here with sink_stream to normalize
  * an output representation of a metrics.
@@ -100,10 +116,12 @@ static int add_metrics(void* data,
     {
         const int suffix_space = 8;
         char suffixed[base_len + suffix_space];
-
+        double sum = gauge_sum(value);
         strcpy(suffixed, full_name);
+        if (check_elide(info, full_name, sum) == 1)
+            break;
         json_object_set_new(obj, full_name, json_real(gauge_value(value)));
-        SUFFIX_ADD(".sum", json_real(gauge_sum(value)));
+        SUFFIX_ADD(".sum", json_real(sum));
         SUFFIX_ADD(".mean", json_real(gauge_mean(value)));
         SUFFIX_ADD(".min", json_real(gauge_min(value)));
         SUFFIX_ADD(".max", json_real(gauge_max(value)));
@@ -117,14 +135,8 @@ static int add_metrics(void* data,
             char suffixed[base_len + suffix_space];
             strcpy(suffixed, full_name);
             double sum = counter_sum(value);
-            if (sum == 0) {
-                int res = elide_mark(info->elide, full_name, info->now);
-                if (res % ELIDE_PERIOD != info->elide->skip) {
-                    break;
-                }
-            } else {
-                elide_unmark(info->elide, full_name, info->now);
-            }
+            if (check_elide(info, full_name, sum) == 1)
+                break;
             SUFFIX_ADD(".count", json_integer(counter_count(value)));
             SUFFIX_ADD(".mean", json_real(counter_mean(value)));
             SUFFIX_ADD(".sum", json_real(sum));
@@ -142,11 +154,16 @@ static int add_metrics(void* data,
     case TIMER:
     {
         timer_hist *t = (timer_hist*)value;
+
+        double mean = timer_mean(&t->tm);
+        if (check_elide(info, full_name, mean) == 1)
+            break;
+
         /* We allow up to 40 characters for the metric name suffix. */
         const int suffix_space = 100;
         char suffixed[base_len + suffix_space];
         strcpy(suffixed, full_name);
-        SUFFIX_ADD(".mean", json_real(timer_mean(&t->tm)));
+        SUFFIX_ADD(".mean", json_real(mean));
         SUFFIX_ADD(".lower", json_real(timer_min(&t->tm)));
         SUFFIX_ADD(".upper", json_real(timer_max(&t->tm)));
         SUFFIX_ADD(".count", json_integer(timer_count(&t->tm)));
@@ -535,11 +552,14 @@ sink* init_http_sink(const sink_config_http* sc, const statsite_config* config) 
     s->sink.close = (void (*)(sink*))close_sink;
     s->worker = malloc(sizeof(pthread_t) * DEFAULT_WORKERS);
 
-    int elide_generation_add = 0;
-    if (rand_gather((char*)&elide_generation_add, sizeof(int)) == -1) {
+    unsigned int elide_generation_add = 0;
+    if (rand_gather((char*)&elide_generation_add, sizeof(unsigned int)) == -1) {
         syslog(LOG_NOTICE, "HTTP: elision generation jitter not initialized");
     }
     s->elide_skip = elide_generation_add % ELIDE_PERIOD;
+    if (s->elide_skip < 0)
+        s->elide_skip = 0;
+    syslog(LOG_NOTICE, "HTTP: using elide skip of %d", s->elide_skip);
 
     sink_elide_refresh(s);
 
