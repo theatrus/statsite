@@ -104,6 +104,13 @@ int hashmap_size(hashmap *map) {
 }
 
 /**
+ * Returns the max size of the hashmap in terms of sltos
+ */
+int hashmap_tablesize(hashmap *map) {
+    return map->table_size;
+}
+
+/**
  * Gets a value.
  * @arg key The key to look for
  * @arg key_len The key length
@@ -386,3 +393,61 @@ int hashmap_iter(hashmap *map, hashmap_callback cb, void *data) {
     return should_break;
 }
 
+/**
+ * Iterates through the key/value pairs in a map, invoking a callback for
+ * each function. If the callback returns "0", the value is retained in the map.
+ * If 1 is returned, the value is removed from the map.
+ * This function does not shrink the table size of the map.
+ * This function expects the callback to remove memory for the value of the function.
+ * @arg map The hashmap to iterate over
+ * @arg cb The callback function to invoke
+ * @arg data Opaque handle passed to the callback
+ * @return 0 on success
+ */
+int hashmap_filter(hashmap *map, hashmap_callback cb, void *data) {
+    // Allocate the table
+    hashmap_entry *new_table = (hashmap_entry*)calloc(map->table_size, sizeof(hashmap_entry));
+
+    // Move each entry
+    hashmap_entry *entry, *old;
+    int in_table;
+    for (int i=0; i < map->table_size; i++) {
+        entry = map->table+i;
+        in_table = 1;
+        if (entry == NULL)
+            continue;
+        while (entry && entry->key) {
+            // Check this value for removal
+            int should_remove = cb(data, entry->key, entry->value);
+
+            // Walk the next links
+            old = entry;
+            entry = entry->next;
+
+            // Insert the value in the new map
+            // Do not compare keys or duplicate since we are just moving values
+            if (!should_remove) {
+                hashmap_insert_table(new_table, map->table_size, old->key, strlen(old->key),
+                                     old->value, 0, 0);
+            } else {
+                free(old->key);
+                map->count--;
+                // Do not remove the value here - this is the responsibility of the callback function
+            }
+
+            // The initial entry is in the table
+            // and we should not free that one.
+            if (!in_table) {
+                free(old);
+            }
+            in_table = 0;
+        }
+    }
+
+    // Free the old table
+    free(map->table);
+
+    // Update the pointers
+    map->table = new_table;
+    return 0;
+}

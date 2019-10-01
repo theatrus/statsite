@@ -57,7 +57,8 @@ static void sink_elide_refresh(struct http_sink* s) {
     if (s->elide == NULL) {
         elide_init(&s->elide, s->elide_skip % ELIDE_PERIOD);
     } else {
-        elide_gc(s->elide, now);
+        int removed = elide_gc(s->elide, now);
+        syslog(LOG_NOTICE, "HTTP: GC elide removed %d entries", removed);
     }
 }
 
@@ -228,10 +229,21 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
         .now = now,
     };
 
+    /* Grab the mutex state while eliding or doing other
+     * operations on the shared elide map. serialize_metrics
+     * can be stack invoked by statsite, espeically on the
+     * fast metrics path and may have more than one worker busy.
+     */
+    pthread_mutex_lock(&sink->sink_mutex);
+
     sink_elide_refresh(sink);
 
     /* produce a metrics json object */
     metrics_iter(m, &info, add_metrics);
+    /* unlock - any shared state work should now be done until
+     * lifoq
+     */
+    pthread_mutex_unlock(&sink->sink_mutex);
 
     strbuf* json_buf;
     strbuf_new(&json_buf, 0);
