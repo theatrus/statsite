@@ -15,6 +15,7 @@
 #include "rand.h"
 #include "elide.h"
 
+const int MAX_BODY_OBJECTS = 5000;
 const int DEFAULT_WORKERS = 2;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
 
@@ -23,6 +24,11 @@ const char* DEFAULT_CIPHERS_OPENSSL = "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES2
 
 const char* USERAGENT = "statsite-http/0";
 const char* OAUTH2_GRANT = "grant_type=client_credentials";
+
+struct http_queue_entry {
+    time_t not_before_backoff;
+    void* data;
+};
 
 struct http_sink {
     sink sink;
@@ -37,12 +43,30 @@ struct http_sink {
 /*
  * Data from the metrics_iter callback */
 struct cb_info {
-    json_t* jobject;
+    json_t** jobjects;
+    int jobjects_count;
+
     elide_t *elide;
     const statsite_config* config;
     const sink_config_http *httpconfig;
     struct timeval now;
 };
+
+/**
+ * Helper function to return a random double
+ */
+static double _get_random(void) {
+    double random_delay;
+    long int rand_seed;
+    if (rand_gather((char*)&rand_seed, sizeof(long int)) == -1) {
+        syslog(LOG_NOTICE, "Falling back on system time to seed HTTP rand");
+        rand_seed = time(0);
+    }
+    struct drand48_data randbuf;
+    srand48_r(rand_seed, &randbuf);
+    drand48_r(&randbuf, &random_delay);
+    return random_delay;
+}
 
 /*
  * Check if the sink's elision output buffer is not initialized, or
@@ -87,16 +111,23 @@ static int check_elide(struct cb_info* info, char* full_name, double value) {
 }
 
 /*
- * TODO: There is a lot redundant code here with sink_stream to normalize
- * an output representation of a metrics.
+ * Callback handling add metrics. If a destination object is too full
+ * the callback will work to split the destination object and generate
+ * a new one.
  */
 static int add_metrics(void* data,
                        metric_type type,
                        char* name,
                        void* value) {
-
     struct cb_info* info = (struct cb_info*)data;
-    json_t* obj = info->jobject;
+    if (json_object_size(info->jobjects[0]) > MAX_BODY_OBJECTS) {
+        json_t** jobjects = malloc(sizeof(json_t*) * (info->jobjects_count + 1));
+        memcpy(&jobjects[1], &info->jobjects[0], sizeof(json_t*)*info->jobjects_count);
+        jobjects[0] = json_object();
+        info->jobjects = jobjects;
+        info->jobjects_count++;
+    }
+    json_t* obj = info->jobjects[0];
     const statsite_config* config = info->config;
 
     /*
@@ -222,37 +253,18 @@ static int json_cb(const char* buf, size_t size, void* d) {
     return 0;
 }
 
-static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
-    json_t* jobject = json_object();
+static int serialize_jobject(struct http_sink* sink,
+                            json_t* jobject,
+                            struct timeval* tv,
+                            time_t not_before) {
     const sink_config_http* httpconfig = (const sink_config_http*)sink->sink.sink_config;
 
-    struct timeval now;
-    gettimeofday(&now, NULL);
-
-    struct cb_info info = {
-        .elide = sink->elide,
-        .jobject = jobject,
-        .config = sink->sink.global_config,
-        .httpconfig = httpconfig,
-        .now = now,
-    };
-
-    /* Grab the mutex state while eliding or doing other
-     * operations on the shared elide map. serialize_metrics
-     * can be stack invoked by statsite, espeically on the
-     * fast metrics path and may have more than one worker busy.
-     */
-    pthread_mutex_lock(&sink->sink_mutex);
-
-    sink_elide_refresh(sink);
-
-    /* produce a metrics json object */
-    metrics_iter(m, &info, add_metrics);
-    /* unlock - any shared state work should now be done until
-     * lifoq
-     */
-    pthread_mutex_unlock(&sink->sink_mutex);
-
+    size_t obj_size = json_object_size(jobject);
+    /* Cowardly refuse to make an empty json list */
+    if (obj_size == 0) {
+        json_decref(jobject);
+        return 0;
+    }
     strbuf* json_buf;
     strbuf_new(&json_buf, 0);
     json_dump_callback(jobject, json_cb, (void*)json_buf, 0);
@@ -280,7 +292,6 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
     curl_free(escaped_json_data);
 
     /* Encode the time stamp */
-    struct timeval* tv = (struct timeval*) data;
     struct tm tm;
     localtime_r(&tv->tv_sec, &tm);
     char time_buf[200];
@@ -303,13 +314,84 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
 
     strbuf_free(post_buf, false);
 
-    int push_ret = lifoq_push(sink->queue, post_data, post_len, true, false);
+    struct http_queue_entry *qe = malloc(sizeof(struct http_queue_entry));
+    qe->data = post_data;
+    qe->not_before_backoff = not_before;
+
+    int push_ret = lifoq_push(sink->queue, (void*)qe, post_len, true, false);
     if (push_ret) {
         syslog(LOG_ERR, "HTTP Sink couldn't enqueue a %d size buffer - rejected code %d",
                post_len, push_ret);
         free(post_data);
+        free(qe);
     }
 
+    return 0;
+}
+
+static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
+    json_t** jobjects = malloc(sizeof(json_t*));
+    jobjects[0] = json_object();
+
+    const sink_config_http* httpconfig = (const sink_config_http*)sink->sink.sink_config;
+
+    struct timeval now;
+    gettimeofday(&now, NULL);
+
+    struct cb_info info = {
+        .elide = sink->elide,
+        .jobjects = jobjects,
+        .jobjects_count = 1,
+        .config = sink->sink.global_config,
+        .httpconfig = httpconfig,
+        .now = now,
+    };
+
+    /* Grab the mutex state while eliding or doing other
+     * operations on the shared elide map. serialize_metrics
+     * can be stack invoked by statsite, especially on the
+     * fast metrics path and may have more than one worker busy.
+     */
+    pthread_mutex_lock(&sink->sink_mutex);
+
+    sink_elide_refresh(sink);
+
+    /* produce a metrics json object */
+    metrics_iter(m, &info, add_metrics);
+    /* unlock - any shared state work should now be done until
+     * lifoq
+     */
+    pthread_mutex_unlock(&sink->sink_mutex);
+
+    /**
+     * Compute a backoff time for this set of objects. The HTTP worker
+     * will stall this long before processing queue entries, which adds a
+     * local pause. Since we are using a lifoq, this means new entries
+     * can establish a head of line block for requests, which is unfortunate.
+     */
+    struct timeval* tv = (struct timeval*) data;
+    time_t not_before_backoff = 0;
+    if (httpconfig->send_backoff_ms > 0) {
+        double random_delay = _get_random();
+        random_delay = random_delay * (double)httpconfig->send_backoff_ms;
+        time_t backoff = random_delay / 1000.0;
+        not_before_backoff = tv->tv_sec + (time_t)backoff;
+    }
+
+    syslog(LOG_NOTICE, "HTTP: queueing %d objects", info.jobjects_count);
+    for (int i = 0; i < info.jobjects_count; i++) {
+        int res = serialize_jobject(sink, info.jobjects[i], tv, not_before_backoff);
+        if (res != 0) {
+            syslog(LOG_NOTICE, "HTTP: couldn't package json object %d ret code %d", i, res);
+            /* remember to free the remaining objects before bailing */
+            for (int j = i; j < info.jobjects_count; j++) {
+                json_decref(info.jobjects[j]);
+            }
+            free(jobjects);
+            return res;
+        }
+    }
+    free(jobjects);
     return 0;
 }
 
@@ -420,14 +502,6 @@ static void* http_worker(void* arg) {
     struct http_sink* s = (struct http_sink*)arg;
     const sink_config_http* httpconfig = (sink_config_http*)s->sink.sink_config;
 
-    long int rand_seed;
-    if (rand_gather((char*)&rand_seed, sizeof(long int)) == -1) {
-        syslog(LOG_NOTICE, "Falling back on system time to seed HTTP rand");
-        rand_seed = time(0);
-    }
-    struct drand48_data randbuf;
-    srand48_r(rand_seed, &randbuf);
-
     char* error_buffer = malloc(CURL_ERROR_SIZE + 1);
     strbuf *recv_buf;
 
@@ -445,27 +519,31 @@ static void* http_worker(void* arg) {
     strbuf_new(&recv_buf, 16384);
 
     while(true) {
+        struct http_queue_entry* queue_entry;
         void *data = NULL;
         size_t data_size = 0;
-        int ret = lifoq_get(s->queue, &data, &data_size);
+        int ret = lifoq_get(s->queue, (void**)&queue_entry, &data_size);
+        data = queue_entry->data;
         if (ret == LIFOQ_CLOSED)
             goto exit;
 
         /* Delay sending stats until a fixed interval has elapsed */
-        if (httpconfig->send_backoff_ms > 0 && !lifoq_is_closed(s->queue)) {
-            double random_delay = 0;
-            drand48_r(&randbuf, &random_delay);
-            random_delay = random_delay * (double)httpconfig->send_backoff_ms;
-            syslog(LOG_NOTICE, "HTTP: waiting %d ms", (int)random_delay);
-            suseconds_t delay_for = (useconds_t)random_delay * 1000;
+        if (!lifoq_is_closed(s->queue)) {
+            struct timeval now;
+            gettimeofday(&now, NULL);
+            time_t delay_for = (queue_entry->not_before_backoff - now.tv_sec);
+            if (delay_for > 0)
+                syslog(LOG_NOTICE, "HTTP: delaying worker for %ld seconds", delay_for);
             while (delay_for > 0) {
                 /* Check if the queue is draining/closed, and abort sleep if needed. */
                 if (lifoq_is_closed(s->queue))
                     break;
-                usleep(1000);
-                delay_for -= 1000;
-
+                usleep(1000000);
+                delay_for -= 1;
             }
+            /* Gratuitous ms level delay to jitter */
+            long int ms_delay = _get_random() * 1000000;
+            usleep(ms_delay);
         }
 
         /* Hold the sink mutex for any state, such as auth cookies,
@@ -477,7 +555,7 @@ static void* http_worker(void* arg) {
 
         if (should_authenticate && s->oauth_bearer == NULL) {
             if (!oauth2_get_token(httpconfig, s)) {
-                if (lifoq_push(s->queue, data, data_size, true, true)) {
+                if (lifoq_push(s->queue, (void*)queue_entry, data_size, true, true)) {
                     syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
                     if (data != NULL)
                         free(data);
@@ -523,9 +601,11 @@ static void* http_worker(void* arg) {
 
             syslog(LOG_ERR, "HTTP: error %d: %s %s", rcurl, error_buffer, recv_data);
             /* Re-enqueue data */
-            if (lifoq_push(s->queue, data, data_size, true, true)) {
-                if (data != NULL)
+            if (lifoq_push(s->queue, (void*)queue_entry, data_size, true, true)) {
+                if (data != NULL) {
                     free(data);
+                    free(queue_entry);
+                }
                 syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
             }
 
@@ -542,6 +622,7 @@ static void* http_worker(void* arg) {
         } else {
             syslog(LOG_NOTICE, "HTTP: success");
             free(data);
+            free(queue_entry);
         }
 
         curl_easy_cleanup(curl);
