@@ -70,6 +70,7 @@ typedef struct sink_config_http {
     int max_buffer_size; /* LIFOQ maximum queue size */
     int send_backoff_ms; /* Fixed backoff interval for sends after de-queue */
     int time_out_seconds; /* HTTP post request timeout in seconds */
+    int elide_interval; /* The number of flush intervals to back off when eliding 0s */
 } sink_config_http;
 
 // Represents the configuration of a histogram

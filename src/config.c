@@ -92,7 +92,8 @@ static const sink_config_http DEFAULT_HTTP_SINK = {
     .oauth_token_url = NULL,
     .max_buffer_size = 10 * 1024 * 1024, /* 10 MB */
     .send_backoff_ms = 0,
-    .time_out_seconds = 30 /* HTTP post request timeout in seconds */
+    .time_out_seconds = 30, /* HTTP post request timeout in seconds */
+    .elide_interval = 5
 };
 
 /**
@@ -342,6 +343,8 @@ static int sink_callback(void* user, const char* section, const char* name, cons
             value_to_int(value, &config->send_backoff_ms);
         } else if (NAME_MATCH("time_out_seconds")) {
             value_to_int(value, &config->time_out_seconds);
+        } else if (NAME_MATCH("elide_interval")) {
+            value_to_int(value, &config->elide_interval);
         } else {
             /* Attempt to locate keys
              * of the form param_PNAME */

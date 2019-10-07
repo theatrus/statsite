@@ -24,8 +24,6 @@ const char* DEFAULT_CIPHERS_OPENSSL = "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES2
 const char* USERAGENT = "statsite-http/0";
 const char* OAUTH2_GRANT = "grant_type=client_credentials";
 
-const int ELIDE_PERIOD = 5;
-
 struct http_sink {
     sink sink;
     lifoq* queue;
@@ -52,10 +50,16 @@ struct cb_info {
  */
 static void sink_elide_refresh(struct http_sink* s) {
     struct timeval now;
+    const sink_config_http* httpconfig = (sink_config_http*)s->sink.sink_config;
+
+    if (httpconfig->elide_interval == 0) {
+        return;
+    }
+
     gettimeofday(&now, NULL);
     now.tv_sec -= 60*15;
     if (s->elide == NULL) {
-        elide_init(&s->elide, s->elide_skip % ELIDE_PERIOD);
+        elide_init(&s->elide, s->elide_skip % httpconfig->elide_interval);
     } else {
         int removed = elide_gc(s->elide, now);
         syslog(LOG_NOTICE, "HTTP: GC elide removed %d entries", removed);
@@ -67,9 +71,13 @@ static void sink_elide_refresh(struct http_sink* s) {
  * Returns: 0 if not, 1 if elided and should be skipped
  */
 static int check_elide(struct cb_info* info, char* full_name, double value) {
+    if (info->httpconfig->elide_interval == 0) {
+        return 0;
+    }
+
     if (value == 0) {
         int res = elide_mark(info->elide, full_name, info->now);
-        if (res % ELIDE_PERIOD != info->elide->skip) {
+        if (res % info->httpconfig->elide_interval != info->elide->skip) {
             return 1;
         }
     } else {
@@ -568,7 +576,8 @@ sink* init_http_sink(const sink_config_http* sc, const statsite_config* config) 
     if (rand_gather((char*)&elide_generation_add, sizeof(unsigned int)) == -1) {
         syslog(LOG_NOTICE, "HTTP: elision generation jitter not initialized");
     }
-    s->elide_skip = elide_generation_add % ELIDE_PERIOD;
+
+    s->elide_skip = elide_generation_add % sc->elide_interval;
     if (s->elide_skip < 0)
         s->elide_skip = 0;
     syslog(LOG_NOTICE, "HTTP: using elide skip of %d", s->elide_skip);
