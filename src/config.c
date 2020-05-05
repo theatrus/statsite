@@ -60,7 +60,7 @@ static const statsite_config DEFAULT_CONFIG = {
     12,                 // Set precision 12, 1.6% variance
     true,               // Use type prefixes by default
     "",                 // Global prefix
-    {"", "kv.", "gauges.", "counts.", "timers.", "sets.", ""},
+    {"", "gauges.", "counts.", "timers.", "sets.", "", "gauges."},
     {},
     false,              // Extended counts off by default
     sizeof(default_quantiles) / sizeof(double),
@@ -508,8 +508,8 @@ static int config_callback(void* user, const char* section, const char* name, co
         config->prefixes[TIMER] = strdup(value);
     } else if (NAME_MATCH("sets_prefix")) {
         config->prefixes[SET] = strdup(value);
-    } else if (NAME_MATCH("kv_prefix")) {
-        config->prefixes[KEY_VAL] = strdup(value);
+    } else if (NAME_MATCH("gaugesdirect_prefix")) {
+        config->prefixes[GAUGE_DIRECT] = strdup(value);
 
     // Copy the multi-case variables
     } else if (NAME_MATCH("log_facility")) {
@@ -519,6 +519,7 @@ static int config_callback(void* user, const char* section, const char* name, co
     } else {
         // Log it, but ignore
         syslog(LOG_NOTICE, "Unrecognized config parameter: %s", name);
+        return 0;
     }
 
     // Success
@@ -808,10 +809,6 @@ void free_config(statsite_config* config) {
     if (config->pid_file != NULL) {
         free(config->pid_file);
     }
-    if (config->prefixes[COUNTER] != NULL) {
-        free(config->prefixes[COUNTER]);
-    }
-
     for (int i = 0; i < METRIC_TYPES; i++) {
         if (config->prefixes_final[i] != NULL) {
             free(config->prefixes_final[i]);

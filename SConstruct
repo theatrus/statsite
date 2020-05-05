@@ -42,29 +42,30 @@ env_statsite_with_err = ENV.Clone(CFLAGS = " ".join(CFLAGS_ERROR))
 env_statsite_without_err = ENV.Clone(CFLAGS = " ".join(CFLAGS))
 env_statsite_libev = ENV.Clone(CFLAGS = " ".join(CFLAGS_LIBEV))
 
-objs = env_statsite_with_err.Object('src/hashmap', 'src/hashmap.c')           + \
-        env_statsite_with_err.Object('src/heap', 'src/heap.c')                + \
-        env_statsite_with_err.Object('src/strbuf', 'src/strbuf.c')            + \
-        env_statsite_with_err.Object('src/radix', 'src/radix.c')              + \
-        env_statsite_with_err.Object('src/hll_constants', 'src/hll_constants.c') + \
-        env_statsite_with_err.Object('src/hll', 'src/hll.c')                  + \
-        env_statsite_with_err.Object('src/set', 'src/set.c')                  + \
-        env_statsite_with_err.Object('src/cm_quantile', 'src/cm_quantile.c')  + \
-        env_statsite_with_err.Object('src/timer', 'src/timer.c')              + \
-        env_statsite_with_err.Object('src/counter', 'src/counter.c')          + \
-        env_statsite_with_err.Object('src/gauge', 'src/gauge.c')          + \
-        env_statsite_with_err.Object('src/metrics', 'src/metrics.c')          + \
-        env_statsite_with_err.Object('src/streaming', 'src/streaming.c')      + \
-        env_statsite_with_err.Object('src/config', 'src/config.c')            + \
-        env_statsite_with_err.Object('src/circqueue', 'src/circqueue.c')      + \
-        env_statsite_with_err.Object('src/sink', 'src/sink.c')                + \
-        env_statsite_with_err.Object('src/sink_stream', 'src/sink_stream.c')  + \
-        env_statsite_with_err.Object('src/lifoq', 'src/lifoq.c')              + \
-        env_statsite_with_err.Object('src/sink_http', 'src/sink_http.c')      + \
-        env_statsite_with_err.Object('src/utils', 'src/utils.c')              + \
-        env_statsite_with_err.Object('src/elide', 'src/elide.c')              + \
-        env_statsite_with_err.Object('src/rand', 'src/rand.c')                + \
-        env_statsite_libev.Object('src/networking', 'src/networking.c')       + \
+objs = env_statsite_with_err.Object('src/hashmap', 'src/hashmap.c')                  + \
+        env_statsite_with_err.Object('src/heap', 'src/heap.c')                       + \
+        env_statsite_with_err.Object('src/strbuf', 'src/strbuf.c')                   + \
+        env_statsite_with_err.Object('src/radix', 'src/radix.c')                     + \
+        env_statsite_with_err.Object('src/hll_constants', 'src/hll_constants.c')     + \
+        env_statsite_with_err.Object('src/hll', 'src/hll.c')                         + \
+        env_statsite_with_err.Object('src/set', 'src/set.c')                         + \
+        env_statsite_with_err.Object('src/cm_quantile', 'src/cm_quantile.c')         + \
+        env_statsite_with_err.Object('src/timer', 'src/timer.c')                     + \
+        env_statsite_with_err.Object('src/counter', 'src/counter.c')                 + \
+        env_statsite_with_err.Object('src/gauge', 'src/gauge.c')                     + \
+        env_statsite_with_err.Object('src/gauge_direct', 'src/gauge_direct.c')       + \
+        env_statsite_with_err.Object('src/metrics', 'src/metrics.c')                 + \
+        env_statsite_with_err.Object('src/streaming', 'src/streaming.c')             + \
+        env_statsite_with_err.Object('src/config', 'src/config.c')                   + \
+        env_statsite_with_err.Object('src/circqueue', 'src/circqueue.c')             + \
+        env_statsite_with_err.Object('src/sink', 'src/sink.c')                       + \
+        env_statsite_with_err.Object('src/sink_stream', 'src/sink_stream.c')         + \
+        env_statsite_with_err.Object('src/lifoq', 'src/lifoq.c')                     + \
+        env_statsite_with_err.Object('src/sink_http', 'src/sink_http.c')             + \
+        env_statsite_with_err.Object('src/utils', 'src/utils.c')                     + \
+        env_statsite_with_err.Object('src/elide', 'src/elide.c')                     + \
+        env_statsite_with_err.Object('src/rand', 'src/rand.c')                       + \
+        env_statsite_libev.Object('src/networking', 'src/networking.c')              + \
         env_statsite_libev.Object('src/conn_handler', 'src/conn_handler.c')
 
 statsite_libs = ["m", "pthread", murmur, inih, "jansson", curl_lib]

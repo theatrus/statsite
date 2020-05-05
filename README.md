@@ -8,8 +8,8 @@ Features
 --------
 
 * Multiple metric types
-  - Key / Value
-  - Gauges
+  - Simple gauges (type `k` or `G`)
+  - Aggregated gauges (type `g`)
   - Counters
   - Timers
   - Sets
@@ -198,15 +198,15 @@ options must exist in the `statsite` section of the INI file:
 * global\_prefix : Prefix that will be added to all messages.
   Defaults to empty string.
 
-* kv\_prefix, gauges\_prefix, counts\_prefix, sets\_prefix, timers\_prefix : prefix for
-  each message type. Defaults to respectively: "kv.", "gauges.", "counts.",
-  "sets.", "timers.". Values will be ignored if use_type_prefix set to 0.
+* gauges\_prefix, gaugesdirect\_prefix, counts\_prefix, sets\_prefix,
+  timers\_prefix : prefix for each message type. Defaults to respectively:
+  "gauges.", "gauges.", "counts.", "sets.", "timers.". Values will be ignored if
+  use_type_prefix set to 0.
 
-* extended\_counters : If enabled, the counter output is extended to include
-  all the computed summary values. Otherwise, the counter is emitted as just
-  the sum value. Summary values include `mean`, `stdev`, `sum`, `sum_sq`,
-  `lower`, `upper`, and `rate`.
-  Defaults to false.
+* extended\_counters : If enabled, the counter output is extended to include all
+  the computed summary values. Otherwise, the counter is emitted as just the sum
+  value. Summary values include `mean`, `stdev`, `sum`, `sum_sq`, `lower`,
+  `upper`, and `rate`. Defaults to false.
 
 * prefix\_binary\_stream : If enabled, the keys streamed to a the stream\_cmd
   when using binary\_stream mode are also prefixed. By default, this is false,
@@ -266,8 +266,8 @@ Messages must be terminated by newlines (`\n`).
 
 Currently supported message types:
 
-* `kv` - Simple Key/Value.
-* `g`  - Gauge, similar to `kv` but only the last value per key is retained
+* `G`, `k` - Simple Gauges. Only the last value is stored.
+* `g`  - Aggregated Gauge, reports sum/min/max/mean as well as last value.
 * `ms` - Timer.
 * `h`  - Alias for timer
 * `c`  - Counter.
@@ -276,15 +276,11 @@ Currently supported message types:
 After the flush interval, the counters and timers of the same key are
 aggregated and this is sent to the store.
 
-Gauges also support "delta" updates, which are supported by prefixing the
-value with either a `+` or a `-`. This implies you can't explicitly set a gauge to a negative number without first setting it to zero.
+Aggregated gauges also support "delta" updates, which are supported by prefixing
+the value with either a `+` or a `-`. This implies you can't explicitly set a
+gauge to a negative number without first setting it to zero.
 
 Examples:
-
-The following is a simple key/value pair, in this case reporting how many
-queries we've seen in the last second on MySQL::
-
-    mysql.queries:1381|kv
 
 The following is a timer, timing the response speed of an API call::
 
@@ -336,10 +332,10 @@ Here is an example of the simplest possible Python sink:
 Binary Protocol
 ---------------
 
-In addition to the statsd compatible ASCII protocol, statsite includes
-a lightweight binary protocol. This can be used if you want to make use
-of special characters such as the colon, pipe character, or newlines. It
-is also marginally faster to process, and may provide 10-20% more throughput.
+In addition to the statsd compatible ASCII protocol, statsite includes a
+lightweight binary protocol. This can be used if you want to make use of special
+characters such as the colon, pipe character, or newlines. It is also marginally
+faster to process, and may provide 10-20% more throughput.
 
 Each command is sent to statsite over the same ports with this header:
 
@@ -353,7 +349,7 @@ Then depending on the metric type, it is followed by either:
 The "Magic Byte" is the value 0xaa (170). This switches the internal
 processing from the ASCII mode to binary. The metric type is one of:
 
-* 0x1 : Key value / Gauge
+* 0x1 : Gauge
 * 0x2 : Counter
 * 0x3 : Timer
 * 0x4 : Set
@@ -383,60 +379,3 @@ Here is an example of sending ("Conns", "c", 200) as hex:
 
 Note: The binary protocol does not include support for "flags" and resultantly
 cannot be used for transmitting sampled counters.
-
-
-Binary Sink Protocol
---------------------
-
-It is also possible to have the data streamed to be represented
-in a binary format. Again, this is used if you want to use the reserved
-characters. It may also be faster.
-
-Each command is sent to the sink in the following manner:
-
-    <Timestamp><Metric Type><Value Type><Key Length><Value><Key>[<Count>]
-
-Most of these are the same as the binary protocol. There are a few.
-changes however. The Timestamp is sent as an 8 byte unsigned integer,
-which is the current Unix timestamp. The Metric type is one of:
-
-* 0x1 : Key value
-* 0x2 : Counter
-* 0x3 : Timer
-* 0x4 : Set
-* 0x5 : Gauge
-
-The value type is one of:
-
-* 0x0 : No type (Key/Value)
-* 0x1 : Sum (Also used for Sets)
-* 0x2 : Sum Squared
-* 0x3 : Mean
-* 0x4 : Count
-* 0x5 : Standard deviation
-* 0x6 : Minimum Value
-* 0x7 : Maximum Value
-* 0x8 : Histogram Floor Value
-* 0x9 : Histogram Bin Value
-* 0xa : Histogram Ceiling Value
-* 0xb : Count Rate (Sum / Flush Interval)
-* 0xc : Sample Rate (Count / Flush Interval)
-* 0x80 OR `percentile` :  If the type OR's with 128 (0x80), then it is a
-    percentile amount. The amount is OR'd with 0x80 to provide the type. For
-    example (0x80 | 0x32) = 0xb2 is the 50% percentile or medium. The 95th
-    percentile is (0x80 | 0xdf) = 0xdf.
-
-The key length is a 2 byte unsigned integer representing the key length
-terminated by a NULL character. The Value is an IEEE754 double. Lastly,
-the key is a NULL-terminated character stream.
-
-The final `<Count>` field is only set for histogram values.
-It is always provided as an unsigned 32 bit integer value. Histograms use the
-value field to specify the bin, and the count field for the entries in that
-bin. The special values for histogram floor and ceiling indicate values that
-were outside the specified histogram range. For example, if the min value was
-50 and the max 200, then HISTOGRAM\_FLOOR will have value 50, and the count is
-the number of entires which were below this minimum value. The ceiling is the same
-but visa versa. For bin values, the value is the minimum value of the bin, up to
-but not including the next bin.
-

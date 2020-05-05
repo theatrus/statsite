@@ -43,8 +43,8 @@ static int some_cb(FILE *pipe, void *data, metric_type type, char *name, void *v
 
     // Try to write
     switch (type) {
-        case KEY_VAL:
-            if (fprintf(pipe, "kv.%s.%f\n", name, *(double*)value) < 0)
+        case GAUGE_DIRECT:
+            if (fprintf(pipe, "gauges.%s.%f\n", name, gauge_direct_value(value)) < 0)
                 return 1;
             break;
 
@@ -71,8 +71,8 @@ START_TEST(test_stream_some)
     fail_unless(res == 0);
 
     // Add some metrics
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test", 100, 1.0) == 0);
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test2", 42, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test", 100, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test2", 42, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "foo", 4, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "foo", 6, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "bar", 10, 1.0) == 0);
@@ -90,11 +90,11 @@ START_TEST(test_stream_some)
     ssize_t read = fread(&buf, 1, 256, f);
     buf[read] = 0;
 
-    char *check = "kv.test2.42.000000\n\
-kv.test.100.000000\n\
-counts.foo.10.000000\n\
+    char *check = "counts.foo.10.000000\n\
 counts.bar.30.000000\n\
-timers.baz.11.000000\n";
+timers.baz.11.000000\n\
+gauges.test.100.000000\n\
+gauges.test2.42.000000\n";
     fail_unless(strcmp(check, (char*)&buf) == 0);
 
     res = destroy_metrics(&m);
@@ -111,8 +111,8 @@ START_TEST(test_stream_bad_cmd)
     fail_unless(res == 0);
 
     // Add some metrics
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test", 100, 1.0) == 0);
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test2", 42, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test", 100, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test2", 42, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "foo", 4, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "foo", 6, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "bar", 10, 1.0) == 0);
@@ -136,8 +136,8 @@ START_TEST(test_stream_sigpipe)
     fail_unless(res == 0);
 
     // Add some metrics
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test", 100, 1.0) == 0);
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test2", 42, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test", 100, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test2", 42, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "foo", 4, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "foo", 6, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, COUNTER, "bar", 10, 1.0) == 0);

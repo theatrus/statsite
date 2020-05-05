@@ -7,12 +7,12 @@
 
 typedef enum {
     UNKNOWN,
-    KEY_VAL,
     GAUGE,
     COUNTER,
     TIMER,
     SET,
-    GAUGE_DELTA
+    GAUGE_DELTA,
+    GAUGE_DIRECT, /* Like a gauge, but zero other aggregation support */
 } metric_type;
 
 typedef enum {

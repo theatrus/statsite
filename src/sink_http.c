@@ -153,9 +153,14 @@ static int add_metrics(void* data,
     strcpy(full_name, prefix);
     strcat(full_name, name);
     switch (type) {
-    case KEY_VAL:
-        json_object_set_new(obj, full_name, json_real(*(double*)value));
+    case GAUGE_DIRECT:
+    {
+        double gv = gauge_value(value);
+        if (check_elide(info, full_name, gv) == 1)
+            break;
+        json_object_set_new(obj, full_name, json_real(gauge_value(value)));
         break;
+    }
     case GAUGE:
     {
         const int suffix_space = 8;
