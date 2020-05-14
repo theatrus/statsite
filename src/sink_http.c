@@ -15,7 +15,7 @@
 #include "rand.h"
 #include "elide.h"
 
-const int MAX_BODY_OBJECTS = 5000;
+const int MAX_BODY_OBJECTS = 10000;
 const int DEFAULT_WORKERS = 2;
 const useconds_t FAILURE_WAIT = 5000000; /* 5 seconds */
 
@@ -542,7 +542,7 @@ static void* http_worker(void* arg) {
                 delay_for -= 1;
             }
             /* Gratuitous ms level delay to jitter */
-            long int ms_delay = _get_random() * 1000000;
+            long int ms_delay = _get_random() * 500000;
             usleep(ms_delay);
         }
 
