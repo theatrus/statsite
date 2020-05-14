@@ -124,6 +124,7 @@ static int add_metrics(void* data,
         json_t** jobjects = malloc(sizeof(json_t*) * (info->jobjects_count + 1));
         memcpy(&jobjects[1], &info->jobjects[0], sizeof(json_t*)*info->jobjects_count);
         jobjects[0] = json_object();
+        free(info->jobjects);
         info->jobjects = jobjects;
         info->jobjects_count++;
     }
@@ -559,6 +560,8 @@ static void* http_worker(void* arg) {
                     syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
                     if (data != NULL)
                         free(data);
+                    if (queue_entry != NULL)
+                        free(queue_entry);
                 }
                 pthread_mutex_unlock(&s->sink_mutex);
                 continue;
@@ -602,10 +605,10 @@ static void* http_worker(void* arg) {
             syslog(LOG_ERR, "HTTP: error %d: %s %s", rcurl, error_buffer, recv_data);
             /* Re-enqueue data */
             if (lifoq_push(s->queue, (void*)queue_entry, data_size, true, true)) {
-                if (data != NULL) {
+                if (data != NULL)
                     free(data);
+                if (queue_entry != NULL)
                     free(queue_entry);
-                }
                 syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
             }
 
