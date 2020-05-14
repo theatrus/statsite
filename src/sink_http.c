@@ -120,12 +120,15 @@ static int add_metrics(void* data,
                        char* name,
                        void* value) {
     struct cb_info* info = (struct cb_info*)data;
+
     if (json_object_size(info->jobjects[0]) > MAX_BODY_OBJECTS) {
+        /* build an array size + 1 and copy in references */
         json_t** jobjects = malloc(sizeof(json_t*) * (info->jobjects_count + 1));
-        memcpy(&jobjects[1], &info->jobjects[0], sizeof(json_t*)*info->jobjects_count);
-        jobjects[0] = json_object();
+        memcpy(&jobjects[1], &info->jobjects[0], sizeof(json_t*) * info->jobjects_count);
         free(info->jobjects);
+
         info->jobjects = jobjects;
+        info->jobjects[0] = json_object();
         info->jobjects_count++;
     }
     json_t* obj = info->jobjects[0];
@@ -376,6 +379,7 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
         double random_delay = _get_random();
         random_delay = random_delay * (double)httpconfig->send_backoff_ms;
         time_t backoff = random_delay / 1000.0;
+        syslog(LOG_NOTICE, "HTTP: setting backoff time to %ld seconds", backoff);
         not_before_backoff = tv->tv_sec + (time_t)backoff;
     }
 
@@ -388,11 +392,11 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
             for (int j = i; j < info.jobjects_count; j++) {
                 json_decref(info.jobjects[j]);
             }
-            free(jobjects);
+            free(info.jobjects);
             return res;
         }
     }
-    free(jobjects);
+    free(info.jobjects);
     return 0;
 }
 
@@ -496,11 +500,20 @@ exit:
 }
 
 /*
+ * Let workers log who they are
+ */
+struct http_worker_info {
+    struct http_sink* sink;
+    int worker_num;
+};
+
+/*
  * A simple background worker thread which pops from the queue and tries
  * to post. If the queue is marked closed, this thread exits
  */
 static void* http_worker(void* arg) {
-    struct http_sink* s = (struct http_sink*)arg;
+    struct http_worker_info* info = (struct http_worker_info*)arg;
+    struct http_sink* s = info->sink;
     const sink_config_http* httpconfig = (sink_config_http*)s->sink.sink_config;
 
     char* error_buffer = malloc(CURL_ERROR_SIZE + 1);
@@ -512,11 +525,11 @@ static void* http_worker(void* arg) {
     else
         ssl_ciphers = curl_which_ssl();
 
-    syslog(LOG_NOTICE, "HTTP: Using cipher suite %s", ssl_ciphers);
+    syslog(LOG_NOTICE, "HTTP(%d): Using cipher suite %s", info->worker_num, ssl_ciphers);
 
     bool should_authenticate = httpconfig->oauth_key != NULL;
 
-    syslog(LOG_NOTICE, "Starting HTTP worker");
+    syslog(LOG_NOTICE, "HTTP(%d): Starting HTTP worker", info->worker_num);
     strbuf_new(&recv_buf, 16384);
 
     while(true) {
@@ -534,7 +547,7 @@ static void* http_worker(void* arg) {
             gettimeofday(&now, NULL);
             time_t delay_for = (queue_entry->not_before_backoff - now.tv_sec);
             if (delay_for > 0)
-                syslog(LOG_NOTICE, "HTTP: delaying worker for %ld seconds", delay_for);
+                syslog(LOG_NOTICE, "HTTP(%d): delaying worker for %ld seconds", info->worker_num, delay_for);
             while (delay_for > 0) {
                 /* Check if the queue is draining/closed, and abort sleep if needed. */
                 if (lifoq_is_closed(s->queue))
@@ -557,7 +570,7 @@ static void* http_worker(void* arg) {
         if (should_authenticate && s->oauth_bearer == NULL) {
             if (!oauth2_get_token(httpconfig, s)) {
                 if (lifoq_push(s->queue, (void*)queue_entry, data_size, true, true)) {
-                    syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+                    syslog(LOG_ERR, "HTTP(%d): dropped data due to queue full of closed", info->worker_num);
                     if (data != NULL)
                         free(data);
                     if (queue_entry != NULL)
@@ -591,7 +604,7 @@ static void* http_worker(void* arg) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, data_size);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
 
-        syslog(LOG_NOTICE, "HTTP: Sending %zd bytes to %s", data_size, httpconfig->post_url);
+        syslog(LOG_NOTICE, "HTTP(%d): Sending %zd bytes to %s", info->worker_num, data_size, httpconfig->post_url);
         /* Do it! */
         CURLcode rcurl = curl_easy_perform(curl);
         long http_code = 0;
@@ -609,13 +622,13 @@ static void* http_worker(void* arg) {
                     free(data);
                 if (queue_entry != NULL)
                     free(queue_entry);
-                syslog(LOG_ERR, "HTTP: dropped data due to queue full of closed");
+                syslog(LOG_ERR, "HTTP(%d): dropped data due to queue full of closed", info->worker_num);
             }
 
             /* Remove any authentication token - this will cause us to get a new one */
             pthread_mutex_lock(&s->sink_mutex);
             if (s->oauth_bearer && s->oauth_bearer == last_bearer) {
-                syslog(LOG_NOTICE, "HTTP: clearing Oauth bearer token");
+                syslog(LOG_NOTICE, "HTTP(%d): clearing Oauth bearer token", info->worker_num);
                 free(s->oauth_bearer);
                 s->oauth_bearer = NULL;
             }
@@ -623,7 +636,7 @@ static void* http_worker(void* arg) {
 
             usleep(FAILURE_WAIT);
         } else {
-            syslog(LOG_NOTICE, "HTTP: success");
+            syslog(LOG_NOTICE, "HTTP(%d): success", info->worker_num);
             free(data);
             free(queue_entry);
         }
@@ -672,8 +685,12 @@ sink* init_http_sink(const sink_config_http* sc, const statsite_config* config) 
 
     syslog(LOG_NOTICE, "HTTP: using maximum queue size of %d", sc->max_buffer_size);
     lifoq_new(&s->queue, sc->max_buffer_size);
-    for (int i = 0; i < DEFAULT_WORKERS; i++)
-        pthread_create(&s->worker[i], NULL, http_worker, (void*)s);
+    for (int i = 0; i < DEFAULT_WORKERS; i++) {
+        struct http_worker_info *info = malloc(sizeof(struct http_worker_info));
+        info->sink = s;
+        info->worker_num = i;
+        pthread_create(&s->worker[i], NULL, http_worker, (void*)info);
+    }
 
     return (sink*)s;
 }
