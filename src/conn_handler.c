@@ -191,8 +191,9 @@ static int handle_ascii_client_connect(statsite_conn_handler *handle) {
             case 'm':
                 type = TIMER;
                 break;
-            case 'k':
-                type = KEY_VAL;
+            case 'k': // Formerly K_V
+            case 'G':
+                type = GAUGE_DIRECT;
                 break;
             case 'g':
                 type = GAUGE;

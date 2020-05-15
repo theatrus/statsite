@@ -22,8 +22,8 @@ static int stream_formatter(FILE *pipe, void *data, metric_type type, char *name
     int i;
     char *prefix = ct->global_config->prefixes_final[type];
     switch (type) {
-        case KEY_VAL:
-            STREAM("%s%s|%f|%lld\n", prefix, name, *(double*)value);
+        case GAUGE_DIRECT:
+            STREAM("%s%s|%f|%lld\n", prefix, name, gauge_direct_value(value));
             break;
 
         case GAUGE:

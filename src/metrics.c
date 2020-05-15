@@ -8,6 +8,7 @@ static int counter_delete_cb(void *data, const char *key, void *value);
 static int timer_delete_cb(void *data, const char *key, void *value);
 static int set_delete_cb(void *data, const char *key, void *value);
 static int gauge_delete_cb(void *data, const char *key, void *value);
+static int gauge_direct_delete_cb(void* data, const char* key, void* value);
 static int iter_cb(void *data, const char *key, void *value);
 
 struct cb_info {
@@ -44,9 +45,9 @@ int init_metrics(double timer_eps, double *quantiles, uint32_t num_quants, radix
     if (res) return res;
     res = hashmap_init(0, &m->gauges);
     if (res) return res;
+    res = hashmap_init(0, &m->gauges_direct);
+    if (res) return res;
 
-    // Set the head of our linked list to null
-    m->kv_vals = NULL;
     return 0;
 }
 
@@ -70,16 +71,6 @@ int destroy_metrics(metrics *m) {
     // Clear the copied quantiles array
     free(m->quantiles);
 
-    // Nuke all the k/v pairs
-    key_val *current = m->kv_vals;
-    key_val *prev = NULL;
-    while (current) {
-        free(current->name);
-        prev = current;
-        current = current->next;
-        free(prev);
-    }
-
     // Nuke the counters
     hashmap_iter(m->counters, counter_delete_cb, NULL);
     hashmap_destroy(m->counters);
@@ -95,6 +86,11 @@ int destroy_metrics(metrics *m) {
     // Nuke the gauges
     hashmap_iter(m->gauges, gauge_delete_cb, NULL);
     hashmap_destroy(m->gauges);
+
+    // Nuke the gauge_directs
+    hashmap_iter(m->gauges_direct, gauge_direct_delete_cb, NULL);
+    hashmap_destroy(m->gauges_direct);
+
 
     return 0;
 }
@@ -173,21 +169,6 @@ static int metrics_add_timer_sample(metrics *m, char *name, double val, double s
 }
 
 /**
- * Adds a new K/V pair
- * @arg name The key name
- * @arg val The value associated
- * @return 0 on success.
- */
-static int metrics_add_kv(metrics *m, char *name, double val) {
-    key_val *kv = malloc(sizeof(key_val));
-    kv->name = strdup(name);
-    kv->val = val;
-    kv->next = m->kv_vals;
-    m->kv_vals = kv;
-    return 0;
-}
-
-/**
  * Sets a gauge value
  * @arg name The name of the gauge
  * @arg val The value to set
@@ -209,6 +190,26 @@ static int metrics_set_gauge(metrics *m, char *name, double val, bool delta) {
 }
 
 /**
+ * Sets a direct gauge value
+ * @arg name The name of the gauge
+ * @arg val The value to set
+ * @return 0 on success
+ */
+static int metrics_set_gauge_direct(metrics *m, char *name, double val) {
+    gauge_direct_t *g;
+    int res = hashmap_get(m->gauges_direct, name, (void**)&g);
+
+    // New gauge
+    if (res == -1) {
+        g = malloc(sizeof(gauge_direct_t));
+        init_gauge_direct(g);
+        hashmap_put(m->gauges_direct, name, g);
+    }
+
+    return gauge_direct_add_sample(g, val);
+}
+
+/**
  * Adds a new sampled value
  * arg type The type of the metrics
  * @arg name The name of the metric
@@ -218,8 +219,8 @@ static int metrics_set_gauge(metrics *m, char *name, double val, bool delta) {
  */
 int metrics_add_sample(metrics *m, metric_type type, char *name, double val, double sample_rate) {
     switch (type) {
-        case KEY_VAL:
-            return metrics_add_kv(m, name, val);
+        case GAUGE_DIRECT:
+            return metrics_set_gauge_direct(m, name, val);
 
         case GAUGE:
             return metrics_set_gauge(m, name, val, false);
@@ -271,20 +272,12 @@ int metrics_set_update(metrics *m, char *name, char *value) {
  * @return 0 on success, or the return of the callback
  */
 int metrics_iter(metrics *m, void *data, metric_callback cb) {
-    // Handle the K/V pairs first
-    key_val *current = m->kv_vals;
-    int should_break = 0;
-    while (current && !should_break) {
-        should_break = cb(data, KEY_VAL, current->name, &current->val);
-        current = current->next;
-    }
-    if (should_break) return should_break;
 
     // Store our data in a small struct
     struct cb_info info = {COUNTER, data, cb};
 
     // Send the counters
-    should_break = hashmap_iter(m->counters, iter_cb, &info);
+    bool should_break = hashmap_iter(m->counters, iter_cb, &info);
     if (should_break) return should_break;
 
     // Send the timers
@@ -295,6 +288,11 @@ int metrics_iter(metrics *m, void *data, metric_callback cb) {
     // Send the gauges
     info.type = GAUGE;
     should_break = hashmap_iter(m->gauges, iter_cb, &info);
+    if (should_break) return should_break;
+
+    // Send the direct gauges
+    info.type = GAUGE_DIRECT;
+    should_break = hashmap_iter(m->gauges_direct, iter_cb, &info);
     if (should_break) return should_break;
 
     // Send the sets
@@ -330,6 +328,13 @@ static int set_delete_cb(void *data, const char *key, void *value) {
 // Gauge map cleanup
 static int gauge_delete_cb(void *data, const char *key, void *value) {
     gauge_t *g = value;
+    free(g);
+    return 0;
+}
+
+// Gauge map cleanup
+static int gauge_direct_delete_cb(void *data, const char *key, void *value) {
+    gauge_direct_t *g = value;
     free(g);
     return 0;
 }

@@ -50,7 +50,7 @@ START_TEST(test_metrics_empty_iter)
 END_TEST
 
 static int iter_test_cb(void *data, metric_type type, char *key, void *val) {
-    if (type == KEY_VAL && strcmp(key, "test") == 0) {
+    if (type == GAUGE_DIRECT && strcmp(key, "test") == 0) {
         double *v = val;
         if (*v == 100) {
             int *okay = data;
@@ -67,7 +67,7 @@ START_TEST(test_metrics_add_iter)
     fail_unless(res == 0);
 
     int okay = 0;
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test", 100, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test", 100, 1.0) == 0);
     fail_unless(metrics_iter(&m, (void*)&okay, iter_test_cb) == 0);
     fail_unless(okay == 1);
 
@@ -79,10 +79,10 @@ END_TEST
 static int iter_test_all_cb(void *data, metric_type type, char *key, void *val) {
     int *o = data;
     switch (type) {
-        case KEY_VAL:
-            if (strcmp(key, "test") == 0 && *(double*)val == 100)
+        case GAUGE_DIRECT:
+            if (strcmp(key, "test") == 0 && gauge_direct_value(val) == 100)
                 *o = *o | 1;
-            if (strcmp(key, "test2") == 0 && *(double*)val == 42)
+            if (strcmp(key, "test2") == 0 && gauge_direct_value(val) == 42)
                 *o = *o | 1 << 1;
             break;
         case COUNTER:
@@ -117,8 +117,8 @@ START_TEST(test_metrics_add_all_iter)
     int res = init_metrics_defaults(&m);
     fail_unless(res == 0);
 
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test", 100, 1.0) == 0);
-    fail_unless(metrics_add_sample(&m, KEY_VAL, "test2", 42, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test", 100, 1.0) == 0);
+    fail_unless(metrics_add_sample(&m, GAUGE_DIRECT, "test2", 42, 1.0) == 0);
 
     fail_unless(metrics_add_sample(&m, GAUGE, "g1", 1, 1.0) == 0);
     fail_unless(metrics_add_sample(&m, GAUGE, "g1", 200, 1.0) == 0);
