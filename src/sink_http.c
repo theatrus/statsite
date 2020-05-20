@@ -155,10 +155,10 @@ static int add_metrics(void* data,
     switch (type) {
     case GAUGE_DIRECT:
     {
-        double gv = gauge_value(value);
+        double gv = gauge_direct_value(value);
         if (check_elide(info, full_name, gv) == 1)
             break;
-        json_object_set_new(obj, full_name, json_real(gauge_value(value)));
+        json_object_set_new(obj, full_name, json_real(gauge_direct_value(value)));
         break;
     }
     case GAUGE:
