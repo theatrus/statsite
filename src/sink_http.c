@@ -187,7 +187,6 @@ static int add_metrics(void* data,
             if (check_elide(info, full_name, sum) == 1)
                 break;
             SUFFIX_ADD(".count", json_integer(counter_count(value)));
-            SUFFIX_ADD(".mean", json_real(counter_mean(value)));
             SUFFIX_ADD(".sum", json_real(sum));
             SUFFIX_ADD(".lower", json_real(counter_min(value)));
             SUFFIX_ADD(".upper", json_real(counter_max(value)));
@@ -231,7 +230,6 @@ static int add_metrics(void* data,
             SUFFIX_ADD(ptile, json_real(timer_query(&t->tm, quantile)));
         }
         SUFFIX_ADD(".rate", json_real(timer_sum(&t->tm) / config->flush_interval));
-        SUFFIX_ADD(".sample_rate", json_real((double)timer_count(&t->tm) / config->flush_interval));
 
         /* Manual histogram bins */
         if (t->conf) {
