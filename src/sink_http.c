@@ -86,7 +86,7 @@ static void sink_elide_refresh(struct http_sink* s) {
         elide_init(&s->elide, s->elide_skip % httpconfig->elide_interval);
     } else {
         int removed = elide_gc(s->elide, now);
-        syslog(LOG_NOTICE, "HTTP: GC elide removed %d entries", removed);
+        syslog(LOG_DEBUG, "HTTP: GC elide removed %d entries", removed);
     }
 }
 
