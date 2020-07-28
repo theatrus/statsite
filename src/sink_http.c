@@ -639,7 +639,7 @@ static void* http_worker(void* arg) {
 
             usleep(FAILURE_WAIT);
         } else {
-            syslog(LOG_NOTICE, "HTTP(%d): success", info->worker_num);
+            syslog(LOG_DEBUG, "HTTP(%d): success", info->worker_num);
             free(data);
             free(queue_entry);
         }
