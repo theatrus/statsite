@@ -382,11 +382,11 @@ static int serialize_metrics(struct http_sink* sink, metrics* m, void* data) {
         double random_delay = _get_random();
         random_delay = random_delay * (double)httpconfig->send_backoff_ms;
         time_t backoff = random_delay / 1000.0;
-        syslog(LOG_NOTICE, "HTTP: setting backoff time to %ld seconds", backoff);
+        syslog(LOG_DEBUG, "HTTP: setting backoff time to %ld seconds", backoff);
         not_before_backoff = tv->tv_sec + (time_t)backoff;
     }
 
-    syslog(LOG_NOTICE, "HTTP: queueing %d objects", info.jobjects_count);
+    syslog(LOG_DEBUG, "HTTP: queueing %d objects", info.jobjects_count);
     for (int i = 0; i < info.jobjects_count; i++) {
         int res = serialize_jobject(sink, info.jobjects[i], tv, not_before_backoff);
         if (res != 0) {
@@ -550,7 +550,7 @@ static void* http_worker(void* arg) {
             gettimeofday(&now, NULL);
             time_t delay_for = (queue_entry->not_before_backoff - now.tv_sec);
             if (delay_for > 0)
-                syslog(LOG_NOTICE, "HTTP(%d): delaying worker for %ld seconds", info->worker_num, delay_for);
+                syslog(LOG_DEBUG, "HTTP(%d): delaying worker for %ld seconds", info->worker_num, delay_for);
             while (delay_for > 0) {
                 /* Check if the queue is draining/closed, and abort sleep if needed. */
                 if (lifoq_is_closed(s->queue))
